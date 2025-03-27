@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 export default function UnoMainMenu() {
   const [playerName, setPlayerName] = useState("");
   const [validName, setValidName] = useState(false);
   const [saved, setSaved] = useState(false);
+  
+  let navigate = useNavigate();
 
   const handleNameChange = (e) => {
     setPlayerName(e.target.value);
@@ -44,19 +47,19 @@ export default function UnoMainMenu() {
         
         <button 
           className={`w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-blue-700" : "opacity-50 cursor-not-allowed"}`} 
-          onClick={() => saved && alert("Go to Game List")} 
+          onClick={() => navigate('/game-list')} 
           disabled={!saved}>
           Game List
         </button>
         <button 
           className={`w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-green-700" : "opacity-50 cursor-not-allowed"}`} 
-          onClick={() => saved && alert("Create Game")} 
+          onClick={() => navigate('/create-game')} 
           disabled={!saved}>
           Create Game
         </button>
         <button 
           className={`w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-yellow-700" : "opacity-50 cursor-not-allowed"}`} 
-          onClick={() => saved && alert("Join Game")} 
+          onClick={() => navigate('/join-game')} 
           disabled={!saved}>
           Join Game
         </button>
