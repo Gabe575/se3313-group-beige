@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import MainMenu from './components/MainMenu';
 import GameList from './components/GameList';
 import CreateGame from './components/CreateGame';
+import Lobby from './components/Lobby';
 import NotFound from './components/NotFound';
 
 
@@ -22,7 +23,9 @@ export default function App() {
                     <Route path="/" element={<MainMenu />} />
                     <Route path='/game-list' element={<GameList />} />
                     <Route path='/create-game' element={<CreateGame />} />
-                    <Route path='/game' element={<GameList />} />
+                    <Route path='/game/:game_id' element={<GameList />} />
+                    <Route path='/lobby/:game_id' element={<Lobby />} />
+                    
 
                     
                     <Route path='/*' element={<NotFound />} />

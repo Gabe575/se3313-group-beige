@@ -8,6 +8,8 @@ export default function CreateGame() {
     const socket = useRef(null); // WebSocket reference
     const [message, setMessage] = useState('');
     const navigate = useNavigate();
+    
+    const [timeoutReached, setTimeoutReached] = useState(false);
 
     // Redirect back to main menu if no name
     useEffect(() => {
@@ -23,7 +25,6 @@ export default function CreateGame() {
 
         socket.current.onerror = (error) => {
             console.error("WebSocket error:", error);
-            setMessage('WebSocket error occured. Please try again.')
         };
 
         socket.current.onmessage = (event) => {
@@ -59,7 +60,7 @@ export default function CreateGame() {
             const requestPayload = {
                 type: "create_game",
                 player_name: playerName,
-                game_name: gameName
+                game_id: gameName
             };
 
             // Send the message to the server via WebSocket
@@ -67,6 +68,16 @@ export default function CreateGame() {
 
             // Set a message while waiting for the server response
             setMessage("Creating game, please wait...");
+            
+            setTimeoutReached(false);
+            
+            // If longer than 5 seconds, show error
+            setTimeout(() => {
+                if (!timeoutReached) {
+                    setMessage("Problem occurred while trying to create the game. Please try again.");
+                }
+            }, 5000);
+            
         } else {
             setMessage("Please enter a valid game name.");
         }
