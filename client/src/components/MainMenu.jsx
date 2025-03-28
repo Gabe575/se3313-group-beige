@@ -57,12 +57,6 @@ export default function UnoMainMenu() {
           disabled={!saved}>
           Create Game
         </button>
-        <button 
-          className={`w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-yellow-700" : "opacity-50 cursor-not-allowed"}`} 
-          onClick={() => navigate('/join-game')} 
-          disabled={!saved}>
-          Join Game
-        </button>
       </div>
     </div>
   );

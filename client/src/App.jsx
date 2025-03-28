@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import MainMenu from './components/MainMenu';
 import GameList from './components/GameList';
+import CreateGame from './components/CreateGame';
 
 
 
@@ -22,8 +23,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<MainMenu />} />
                     <Route path='/game-list' element={<GameList />} />
-                    <Route path='/create-game' element={<GameList />} />
-                    <Route path='/join-game' element={<GameList />} />
+                    <Route path='/create-game' element={<CreateGame />} />
                     <Route path='/game' element={<GameList />} />
                     
                 </Routes>

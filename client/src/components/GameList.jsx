@@ -32,7 +32,7 @@ export default function () {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-red-600 p-4">
             <div className="w-80 bg-white p-6 rounded-2xl shadow-lg flex flex-col gap-4">
-                <h2 className="text-center text-lg font-bold">Available Games</h2>
+                <h2 className="text-center text-lg font-bold text-black">Available Games</h2>
                 <ul className="space-y-2">
                     {games.length > 0 ? (
                         games.map((game) => (
@@ -41,7 +41,7 @@ export default function () {
                                 className="p-2 bg-gray-200 rounded-lg text-center cursor-pointer hover:bg-gray-400 transition"
                                 onClick={() => navigate(`/game/${game.id}`)}
                             >
-                                {game.name}
+                                Join - {game.name}
                             </li>
                         ))
                     ) : (
