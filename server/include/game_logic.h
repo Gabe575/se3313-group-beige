@@ -22,6 +22,9 @@ public:
     std::vector<std::string> discard_pile; // pile where played cards go
     int current_turn = 0; // index of player whose turn it is
 
+    std::string pending_wild_choice = "";
+    std::string wild_color = "";
+
     /**
      * @brief Constructor: Initializes the game session with a unique ID.
      * @param id The unique identifier for the game session.

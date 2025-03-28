@@ -1,0 +1,51 @@
+# Build folders
+/build/
+/out/
+/Debug/
+/Release/
+
+# VSCode and Visual Studio
+.vscode/
+.vs/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Executables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Logs and databases
+*.log
+
+# vcpkg artifacts
+vcpkg_installed/
+vcpkg/
+
+# User-specific config
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Mac/Linux
+.DS_Store
+
+# Windows backup files
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Git
+!.gitignore
+
+# Ignore strange full path entry that showed up
+[C]*/Users/dylenOneDrive*
+
+# Ignore test builds (optional if tests shouldn't be tracked)
+tests/
