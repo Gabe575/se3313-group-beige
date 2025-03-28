@@ -102,8 +102,8 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         std::cout << "Wild card played! Waiting for " << player_id << " to choose a color..." << std::endl;
         
         // Ask the player to select a color
-        pending_wild_choice = player_id; // Track the player who must choose
-        wild_color = ""; // Reset wild color until the player selects one
+        //pending_wild_choice = player_id; // Track the player who must choose
+        //wild_color = ""; // Reset wild color until the player selects one
     } 
     // Wild Draw Four
     else if (card.find("Wild Draw Four") != std::string::npos) {
@@ -115,8 +115,8 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         }
         
         std::cout << "Waiting for " << player_id << " to choose a color..." << std::endl;
-        pending_wild_choice = player_id; // Track player needing to select a color
-        wild_color = ""; // Reset wild color
+        //pending_wild_choice = player_id; // Track player needing to select a color
+        //wild_color = ""; // Reset wild color
         current_turn = (current_turn + 2) % players.size();
     } 
     // Regular card, do nothing
