@@ -24,3 +24,4 @@ add_executable(uno_server
     src/player_manager.cpp
     src/utils.cpp
 )
+
