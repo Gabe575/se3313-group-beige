@@ -3,9 +3,10 @@ import { useNavigate } from "react-router";
 import { SOCKET_URL } from '../util/config';
 
 export default function MainMenu() {
-  const [playerName, setPlayerName] = useState("");
-  const [validName, setValidName] = useState(false);
-  const [saved, setSaved] = useState(false);
+  // Player name is stored in localstorage so if name is in storage display that instead so it still shows and they dont have to put their name in again after reloading or switching pages
+  const [playerName, setPlayerName] = useState(localStorage.getItem('name') ? localStorage.getItem('name') : "");
+  const [validName, setValidName] = useState(localStorage.getItem('name') ? true : false);
+  const [saved, setSaved] = useState(localStorage.getItem('name') ? true : false);
 
   let navigate = useNavigate();
 
