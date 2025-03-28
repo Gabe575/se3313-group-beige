@@ -24,3 +24,4 @@ WEBSOCKETS
 
 
 
+Lobbys navigate to navigate(`/lobby/${data.game_id}`);

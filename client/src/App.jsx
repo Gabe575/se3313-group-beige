@@ -23,9 +23,9 @@ export default function App() {
                     <Route path='/game-list' element={<GameList />} />
                     <Route path='/create-game' element={<CreateGame />} />
                     <Route path='/game' element={<GameList />} />
+
+                    
                     <Route path='/*' element={<NotFound />} />
-
-
                 </Routes>
             </Router>
         </Root>
