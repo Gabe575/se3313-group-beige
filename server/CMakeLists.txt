@@ -1,22 +1,27 @@
-cmake_minimum_required(VERSION 3.10)
-project(uno_backend_cpp)
+cmake_minimum_required(VERSION 3.20)
+project(uno_server)
 
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find Boost
-find_package(Boost REQUIRED)
+# Use vcpkg toolchain if not already defined
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
+endif()
 
-# Include directories for dependencies and your project's headers
+# Add include directory for headers
 include_directories(
-    ${Boost_INCLUDE_DIRS}
-    /opt/homebrew/include  # ASIO is installed via Homebrew
-    /opt/homebrew/Cellar/websocketpp/0.8.2/include  # WebSocket++ explicit path
-    /opt/homebrew/include/nlohmann  # JSON
-    ${CMAKE_SOURCE_DIR}/include  # Add the include directory where game_logic.h is located
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/include
 )
 
-# Add executable
-add_executable(uno_backend_cpp src/server.cpp src/game_logic.cpp)
+# Add source files
+add_executable(uno_server
+    src/server.cpp
+    src/game_logic.cpp
+    src/player_manager.cpp
+    src/utils.cpp
+)
 
-# Link necessary libraries
-target_link_libraries(uno_backend_cpp pthread)
