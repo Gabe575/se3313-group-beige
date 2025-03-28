@@ -31,6 +31,10 @@ cd vcpkg
 # or
 ./bootstrap-vcpkg.sh   # Linux/macOS
 ```
+
+Then ./vcpkg install
+
+
 ### 3. Configure CMake
 
 ```bash
@@ -50,3 +54,17 @@ cd build
 ctest --output-on-failure
 ```
 
+
+Run with
+
+.\Debug\uno_server.exe
+
+
+
+
+So after each edit run:
+cd ..                 (get to server folder)
+cmake -B build -S .
+cmake --build build
+cd build
+.\Debug\uno_server.exe
