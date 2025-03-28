@@ -1,9 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
+import { SOCKET_URL } from '../util/config';
 
-export default function UnoMainMenu() {
-  const [playerName, setPlayerName] = useState("");
-  const [validName, setValidName] = useState(false);
-  const [saved, setSaved] = useState(false);
+export default function MainMenu() {
+  // Player name is stored in localstorage so if name is in storage display that instead so it still shows and they dont have to put their name in again after reloading or switching pages
+  const [playerName, setPlayerName] = useState(localStorage.getItem('name') ? localStorage.getItem('name') : "");
+  const [validName, setValidName] = useState(localStorage.getItem('name') ? true : false);
+  const [saved, setSaved] = useState(localStorage.getItem('name') ? true : false);
+
+  let navigate = useNavigate();
+
+  // WebSocket setup - ref for persistence
+  const socket = useRef(null);
+
+  // TODO: check all this
+  useEffect(() => {
+    // Establish WebSocket connection
+    socket.current = new WebSocket(SOCKET_URL);
+
+    socket.current.onopen = () => {
+      console.log("Connected to WebSocket server");
+    };
+
+    socket.current.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    socket.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      // Handle different server responses based on the message type
+      console.log("Received from server:", data);
+    };
+
+    // Cleanup connection when the component is unmounted
+    return () => {
+      if (socket.current) {
+        socket.current.close();
+      }
+    };
+  }, []);
+
+
+
 
   const handleNameChange = (e) => {
     setPlayerName(e.target.value);
@@ -15,6 +53,14 @@ export default function UnoMainMenu() {
     if (validName) {
       localStorage.setItem("name", playerName);
       setSaved(true);
+    }
+
+    // TODO: check
+    // Send player name to the server
+    if (socket.current) {
+      socket.current.send(
+        JSON.stringify({ type: "player_join", player_name: playerName })
+      );
     }
   };
 
@@ -36,29 +82,23 @@ export default function UnoMainMenu() {
           className="w-full text-center border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <button 
+        <button
           className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex justify-center items-center"
           onClick={submit}>
           {saved ? "Name saved ✔" : "Save"}
         </button>
-        
-        <button 
-          className={`w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-blue-700" : "opacity-50 cursor-not-allowed"}`} 
-          onClick={() => saved && alert("Go to Game List")} 
+
+        <button
+          className={`w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-blue-700" : "opacity-50 cursor-not-allowed"}`}
+          onClick={() => navigate('/game-list')}
           disabled={!saved}>
           Game List
         </button>
-        <button 
-          className={`w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-green-700" : "opacity-50 cursor-not-allowed"}`} 
-          onClick={() => saved && alert("Create Game")} 
+        <button
+          className={`w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-green-700" : "opacity-50 cursor-not-allowed"}`}
+          onClick={() => navigate('/create-game')}
           disabled={!saved}>
           Create Game
-        </button>
-        <button 
-          className={`w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-yellow-700" : "opacity-50 cursor-not-allowed"}`} 
-          onClick={() => saved && alert("Join Game")} 
-          disabled={!saved}>
-          Join Game
         </button>
       </div>
     </div>
