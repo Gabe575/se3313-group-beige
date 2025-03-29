@@ -44,9 +44,4 @@ desktop.ini
 # Git
 !.gitignore
 
-# Ignore strange full path entry that showed up
-[C]*/Users/dylenOneDrive*
-
-# Ignore test builds (optional if tests shouldn't be tracked)
-tests/
 
