@@ -8,6 +8,8 @@ export default function MainMenu() {
     const [validName, setValidName] = useState(localStorage.getItem('name') ? true : false);
     const [saved, setSaved] = useState(localStorage.getItem('name') ? true : false);
 
+    const [gameName, setGameName] = useState("");
+
     let navigate = useNavigate();
 
     const socket = useSocket();
@@ -46,6 +48,11 @@ export default function MainMenu() {
             );
         }
     };
+    
+    
+    const handleGameNameChange = (e) => {
+        setGameName(e.target.value);
+    }
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-red-600 p-4">
@@ -79,6 +86,21 @@ export default function MainMenu() {
                     onClick={() => navigate('/create-game')}
                     disabled={!saved}>
                     Create Game
+                </button>
+
+                <div className="text-lg font-bold text-center">Or join a game by name:</div>
+                <input
+                    type="text"
+                    placeholder="Enter game name..."
+                    value={gameName}
+                    onChange={handleGameNameChange}
+                    className={`w-full text-center border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${saved ? "" : "opacity-50 cursor-not-allowed"}`}
+                />
+                <button
+                    className={`w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-yellow-700" : "opacity-50 cursor-not-allowed"}`}
+                    onClick={() => gameName != "" ? navigate(`/lobby/${gameName}`) : alert("Please enter a game name!")}
+                    disabled={!saved}>
+                    Join Game
                 </button>
             </div>
         </div>
