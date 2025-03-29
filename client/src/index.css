@@ -5,7 +5,6 @@
 }
 
 .overlap {
-    margin-left: -10px; /* Adjust to control overlap */
-    z-index: 1;
-    transform: translateX(-10px); /* Added to make sure the cards are visually translated */
+    margin-left: -15px; /* Adjust this to control the degree of overlap */
+    z-index: 10; /* Ensure the overlapping cards are stacked on top */
 }

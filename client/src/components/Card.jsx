@@ -20,16 +20,12 @@ export default function Card({ action, colour, digit, disableShadow, id, playabl
     };
 
     const getFrontContent = () => {
-
         let imagePath = "";
 
         if (action) {
-
-            if (action == "wild") imagePath = `/assets/images/wild.png`
-            else if (action == "plus4") imagePath = `/assets/images/wild_plus4.png`
+            if (action == "wild") imagePath = `/assets/images/wild.png`;
+            else if (action == "plus4") imagePath = `/assets/images/wild_plus4.png`;
             else imagePath = `/assets/images/${colour}_${action}.png`;
-            
-            
         } else if (digit !== undefined) {
             // Regular number cards (0-9)
             imagePath = `/assets/images/${colour}_${digit}.png`;
@@ -39,12 +35,9 @@ export default function Card({ action, colour, digit, disableShadow, id, playabl
             <img
                 src={imagePath}
                 alt={`${colour} ${action || digit} card`}
-                className="w-28 h-20 object-contain"
+                className="w-full h-full object-cover"
             />
         );
-
-
-
     }
 
 
@@ -53,7 +46,7 @@ export default function Card({ action, colour, digit, disableShadow, id, playabl
 
     return (
         <div
-            className={`relative w-24 h-32 rounded-lg shadow-lg ${disableShadow ? "shadow-none" : "shadow-xl"} ${playable ? "cursor-pointer" : "cursor-default"} transition-all ${className}`}
+            className={`relative w-21 h-32 rounded-lg shadow-lg ${disableShadow ? "shadow-none" : "shadow-xl"} ${playable ? "cursor-pointer" : "cursor-default"} transition-all ${className}`}
             style={{
                 transformStyle: "preserve-3d",
             }}
