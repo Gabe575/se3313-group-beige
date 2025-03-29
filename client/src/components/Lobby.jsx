@@ -1,63 +1,73 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { SOCKET_URL } from "../util/config";
+import { useSocket } from "./WebSocketProvider";
 
 export default function Lobby() {
-  const { gameId } = useParams(); // Get the gameId from the URL
-  const [lobbyInfo, setLobbyInfo] = useState(null);
-  const [playerCount, setPlayerCount] = useState(0);
-  const socket = useRef(null);
+    const { gameId } = useParams();
+    const [gameInfo, setGameInfo] = useState(null);
 
-  useEffect(() => {
-    // Connect to WebSocket server for this game lobby
-    socket.current = new WebSocket(SOCKET_URL);
-    socket.current.onopen = () => {
-      console.log("Connected to WebSocket server for lobby");
+    const socket = useSocket();
 
-      // Request initial game info (you may need to send a request for the game's details)
-      socket.current.send(
-        JSON.stringify({ type: "get_game_info", game_id: gameId })
-      );
-    };
+    useEffect(() => {
+        if (socket) {
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Received message:', event.data);
 
-    socket.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("Received from server:", data);
+                // TODO: check this with backend structure
+                if (data.type === "game_info") {
+                    // Update the lobby info and player count
+                    setGameInfo(data.gameInfo);
+                }
+            };
+        }
+        return () => {
+            if (socket) {
+                socket.onmessage = null;
+            }
+        };
+    }, [socket]);
 
-      if (data.type === "game_info") {
-        // Update the lobby info and player count
-        setLobbyInfo(data.game);
-        setPlayerCount(data.game.players.length);
-      }
-    };
+    // Send a request when the page loads
+    useEffect(() => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+                JSON.stringify({ type: "get_game_info", game_id: gameId })
+            );
+        }
+    }, [gameId]);
 
-    // Cleanup WebSocket connection when the component is unmounted
-    return () => {
-      if (socket.current) {
-        socket.current.close();
-      }
-    };
-  }, [gameId]);
+    const startGame = () => {
+        // Send request to server to start game
+        console.log('Not implemented! Send request to start to server');
+    }
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="w-80 bg-white p-6 rounded-2xl shadow-lg flex flex-col gap-4">
-        <h2 className="text-center text-lg font-bold text-black">
-          Lobby: {lobbyInfo?.name || "Loading..."}
-        </h2>
-        <p className="text-center">
-          {playerCount} {playerCount === 1 ? "Player" : "Players"} in the Lobby
-        </p>
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+            <div className="w-80 bg-white p-6 rounded-2xl shadow-lg flex flex-col gap-4">
+                <h2 className="text-center text-lg font-bold text-black">
+                    Lobby: {gameId}
+                </h2>
+                <p className="text-center">
+                    {gameInfo?.currentPlayers?.length} {gameInfo?.currentPlayers?.length === 1 ? "Player" : "Players"} in the Lobby
+                </p>
 
-        {/* Display player list */}
-        <ul>
-          {lobbyInfo?.players?.map((player, index) => (
-            <li key={index} className="text-center">{player}</li>
-          ))}
-        </ul>
+                <ul>
+                    {gameInfo?.currentPlayers?.map((player, index) => (
+                        <li key={index} className="text-center">{player}</li>
+                    ))}
+                </ul>
 
-        {/* Optionally, add more functionality like starting the game, chatting, etc. */}
-      </div>
-    </div>
-  );
+                {gameInfo?.currentPlayers?.length == 4 && gameInfo?.host == localStorage.getItem('name') ? (
+                    <button
+                        className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex justify-center items-center"
+                        onClick={startGame}>
+                        Start Game!
+                    </button>
+                ) : (
+                    null
+                )}
+            </div>
+        </div>
+    );
 }

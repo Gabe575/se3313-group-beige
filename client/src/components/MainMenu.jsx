@@ -13,20 +13,16 @@ export default function MainMenu() {
     const socket = useSocket();
     useEffect(() => {
         if (socket) {
-          // Handle incoming messages
-          socket.onmessage = (event) => {
-            console.log('Received message:', event.data);
-            
-          };
+            socket.onmessage = (event) => {
+                console.log('Received message:', event.data);
+            };
         }
-    
         return () => {
-          // Clean up any event listeners if necessary
-          if (socket) {
-            socket.onmessage = null;
-          }
+            if (socket) {
+                socket.onmessage = null;
+            }
         };
-      }, [socket]);
+    }, [socket]);
 
 
     const handleNameChange = (e) => {
