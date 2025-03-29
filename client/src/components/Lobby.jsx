@@ -5,6 +5,8 @@ import { useSocket } from "./WebSocketProvider";
 export default function Lobby() {
     const { gameId } = useParams();
     const [gameInfo, setGameInfo] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState("");
 
     const socket = useSocket();
 
@@ -14,10 +16,10 @@ export default function Lobby() {
                 const data = JSON.parse(event.data);
                 console.log('Received message:', event.data);
 
-                // TODO: check this with backend structure
                 if (data.type === "game_info") {
-                    // Update the lobby info and player count
+                    // Update the lobby info
                     setGameInfo(data.gameInfo);
+                    setIsLoading(false);
                 }
             };
         }
@@ -31,11 +33,26 @@ export default function Lobby() {
     // Send a request when the page loads
     useEffect(() => {
         if (socket && socket.readyState === WebSocket.OPEN) {
+            setIsLoading(true);
+            setErrorMessage("");
+
             socket.send(
                 JSON.stringify({ type: "get_game_info", game_id: gameId })
             );
+
         }
     }, [gameId]);
+
+    useEffect(() => {
+        if (isLoading) {
+            const timeout = setTimeout(() => {
+                setErrorMessage("Failed to receive game info. Please try again later.");
+                setIsLoading(false);
+            }, 2500);
+
+            return () => clearTimeout(timeout);
+        }
+    }, [isLoading]);
 
     const startGame = () => {
         // Send request to server to start game
@@ -48,15 +65,33 @@ export default function Lobby() {
                 <h2 className="text-center text-lg font-bold text-black">
                     Lobby: {gameId}
                 </h2>
-                <p className="text-center">
-                    {gameInfo?.currentPlayers?.length} {gameInfo?.currentPlayers?.length === 1 ? "Player" : "Players"} in the Lobby
-                </p>
 
-                <ul>
-                    {gameInfo?.currentPlayers?.map((player, index) => (
-                        <li key={index} className="text-center">{player}</li>
-                    ))}
-                </ul>
+                {errorMessage && (
+                    <div className="text-red-500 text-center">
+                        {errorMessage}
+                    </div>
+                )}
+
+                {isLoading ? (
+                    <div className="text-center">Loading players...</div>
+                ) : null}
+                
+                {(!isLoading && errorMessage == "") ? (
+                    <>
+                        <div className="text-center">
+                            {gameInfo?.currentPlayers?.length}{" "}
+                            {gameInfo?.currentPlayers?.length === 1
+                                ? "Player"
+                                : "Players"}{" "}
+                            in the Lobby
+                        </div>
+                        <ul>
+                            {gameInfo?.currentPlayers?.map((player, index) => (
+                                <li key={index} className="text-center">{player}</li>
+                            ))}
+                        </ul>
+                    </>
+                ) : null}
 
                 {gameInfo?.currentPlayers?.length == 4 && gameInfo?.host == localStorage.getItem('name') ? (
                     <button
@@ -64,9 +99,7 @@ export default function Lobby() {
                         onClick={startGame}>
                         Start Game!
                     </button>
-                ) : (
-                    null
-                )}
+                ) : null}
             </div>
         </div>
     );

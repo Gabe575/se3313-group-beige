@@ -24,8 +24,8 @@ export default function App() {
                     <Route path="/" element={<MainMenu />} />
                     <Route path='/game-list' element={<GameList />} />
                     <Route path='/create-game' element={<CreateGame />} />
-                    <Route path='/game/:game_id' element={<GameList />} />
-                    <Route path='/lobby/:game_id' element={<Lobby />} />
+                    <Route path='/game/:gameId' element={<GameList />} />
+                    <Route path='/lobby/:gameId' element={<Lobby />} />
                     
 
                     
