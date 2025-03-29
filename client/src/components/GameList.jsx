@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useSocket } from "./WebSocketProvider";
 
 export default function GameList() {
@@ -26,9 +26,10 @@ export default function GameList() {
         if (socket) {
             // Handle incoming messages
             socket.onmessage = (event) => {
-                console.log('Received message:', event.data);
-                if (JSON.parse(event.data).type == "available_games") {
-                    setGames(JSON.parse(event.data).games)
+                const data = JSON.parse(event.data);
+                console.log('Received message:', data);
+                if (data.type == "available_games") {
+                    setGames(data.games)
                 }
             };
         }

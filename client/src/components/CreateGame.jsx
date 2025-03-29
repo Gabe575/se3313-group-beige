@@ -1,50 +1,42 @@
 import { useNavigate } from "react-router";
-import { useEffect, useState, useRef } from "react";
-import { SOCKET_URL } from '../util/config';
+import { useEffect, useState } from "react";
+import { useSocket } from "./WebSocketProvider";
 
 export default function CreateGame() {
     const [gameName, setGameName] = useState('');
     const [validGameName, setValidGameName] = useState(false);
-    const socket = useRef(null); // WebSocket reference
     const [message, setMessage] = useState('');
+
     const navigate = useNavigate();
+
+    const socket = useSocket();
     
     const [timeoutReached, setTimeoutReached] = useState(false);
+
+    useEffect(() => {
+        if (socket) {
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Received message:', data);
+
+                if (data.type === "game_created") {
+                    // Go to that lobby
+                    navigate(`/lobby/${data.game_id}`);
+                }
+            };
+        }
+        return () => {
+            if (socket) {
+                socket.onmessage = null;
+            }
+        };
+    }, [socket]);
 
     // Redirect back to main menu if no name
     useEffect(() => {
         if (localStorage.getItem('name') == null) {
             navigate('/');
         }
-
-        // Initialize WebSocket connection
-        socket.current = new WebSocket(SOCKET_URL);
-        socket.current.onopen = () => {
-            console.log("Connected to WebSocket server");
-        };
-
-        socket.current.onerror = (error) => {
-            console.error("WebSocket error:", error);
-        };
-
-        socket.current.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            console.log("Received from server:", data);
-
-            if (data.type === "game_created") {
-                // If game is successfully created, navigate to the lobby
-                navigate(`/lobby/${data.game_id}`);
-            } else if (data.type === "error") {
-                setMessage(data.message);
-            }
-        };
-
-        // Cleanup WebSocket connection when the component is unmounted
-        return () => {
-            if (socket.current) {
-                socket.current.close();
-            }
-        };
     }, [navigate]);
 
     const handleGameNameChange = (e) => {
@@ -63,8 +55,11 @@ export default function CreateGame() {
                 game_id: gameName
             };
 
-            // Send the message to the server via WebSocket
-            socket.current.send(JSON.stringify(requestPayload));
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(
+                    JSON.stringify(requestPayload)
+                ); 
+            }
 
             // Set a message while waiting for the server response
             setMessage("Creating game, please wait...");
@@ -74,7 +69,7 @@ export default function CreateGame() {
             // If longer than 5 seconds, show error
             setTimeout(() => {
                 if (!timeoutReached) {
-                    setMessage("Problem occurred while trying to create the game. Please try again.");
+                    setMessage("No response when trying to create game. Please try again.");
                 }
             }, 5000);
             
