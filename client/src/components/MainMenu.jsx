@@ -103,6 +103,7 @@ export default function MainMenu() {
                     Join Game
                 </button>
             </div>
+            <div className="my-10 text-white">SE3313 Group Beige</div>
         </div>
     );
 }
