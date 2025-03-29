@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSocket } from "./WebSocketProvider";
 
+import UnoBoard from "./UnoBoard";
+
 export default function Game() {
     const { gameId } = useParams();
 
@@ -53,22 +55,49 @@ export default function Game() {
             const timeout = setTimeout(() => {
                 setErrorMessage("Failed to receive game info. Please try again later.");
                 setIsLoading(false);
-            }, 2500);
+            }, 5000);
 
             return () => clearTimeout(timeout);
         }
     }, [isLoading]);
 
 
+    // TODO: put gameinfo into uno board component
 
+    const testGameInfo = {
+        currentPlayers: ["p1", "p2", "p3", "p4"], 
+        host: "", 
+        game_id: "a"
+    }
+
+
+    /*
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-            <p>
-                UNO Game
-            </p>
+
+            {isLoading ? (
+                <div className="flex flex-col justify-center items-center min-h-screen">
+                    <p className="p-8">Connecting...</p>
+                    <div className="w-16 h-16 border-4 border-t-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                </div>
+            ) : null}
+
+            {!isLoading ? (
+                <div>
+                    {errorMessage != "" ? (
+                        <p className="text-red-500">
+                            {errorMessage}
+                        </p>
+                    ) : (
+                        <UnoBoard gameInfo={testGameInfo} />
+                    )}
+                </div>
+            ) : null}
+
         </div>
     )
-
+    */
+    return (<UnoBoard gameInfo={testGameInfo} />);
 
 
 }
