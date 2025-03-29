@@ -24,26 +24,41 @@ const CardStack = ({ cards, direction = "vertical" }) => {
         ? "flex-col"
         : "flex-row";
 
-    return (
-        <div className={`flex ${stackStyles} items-center justify-center relative`}>
-            {cards.map((card, index) => {
-                const overlapDistance = getOverlapDistance(cards.length);
+    const centerOffset = (numCards, overlapDistance) => {
+        const totalWidth = overlapDistance * (numCards - 1); // Total distance covered by cards
+        return totalWidth / 2;
+    };
 
-                return (
-                    <div
-                        key={card.id}
-                        className="absolute"
-                        style={{
-                            zIndex: cards.length - index,
-                            transform: `translate(${direction === "horizontal" ? `${index * overlapDistance}px` : "0"}, ${direction === "vertical" ? `${index * overlapDistance}px` : "0"
-                                })`,
-                        }}
-                    >
-                        <Card {...card} />
-                    </div>
-                );
-            })}
-        </div>
+    const overlapDistance = getOverlapDistance(cards.length);
+    const offset = centerOffset(cards.length, overlapDistance);
+
+
+
+    return (
+        <div
+      className={`flex ${stackStyles} items-center justify-center relative`}
+      style={{
+        // Center the stack horizontally if it's horizontal, or vertically if it's vertical
+        transform: direction === "horizontal" ? `translateX(-${offset}px)` : `translateY(-${offset}px)`,
+      }}
+    >
+      {cards.map((card, index) => {
+        return (
+          <div
+            key={card.id}
+            className="absolute"
+            style={{
+              zIndex: cards.length - index, // Ensure later cards appear on top
+              transform: `${direction === "horizontal" ? `translateX(${index * overlapDistance}px)` : ""} ${
+                direction === "vertical" ? `translateY(${index * overlapDistance}px)` : ""
+              }`,
+            }}
+          >
+            <Card {...card} />
+          </div>
+        );
+      })}
+    </div>
     );
 };
 

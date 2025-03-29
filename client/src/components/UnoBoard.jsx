@@ -180,7 +180,7 @@ export default function UnoBoard({ gameInfo }) {
     return (
         <div className="relative w-full h-[1000px] bg-red-100">
             <div className="absolute top-50 left-1/2 transform -translate-x-1/2">
-                <CardStack cards={getSomeCards(20)} direction="horizontal" />
+                <CardStack cards={getSomeCards(10)} direction="horizontal" />
             </div>
             
 
