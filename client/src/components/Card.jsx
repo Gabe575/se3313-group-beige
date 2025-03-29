@@ -1,27 +1,18 @@
+import { act, useEffect } from "react";
 
 
 
+export default function Card({ action, colour, digit, disableShadow, id, playable }) {
 
-// For testing -gives a random card component
-export function getRandomCard() {
+    useEffect(() => {
+        console.log(action)
+    }, [action])
 
-    const colour = ['red', ]
-
-
-
-
-
-}
-
-
-
-
-export default function Card({ card }) {
 
     // TODO: check
     const onClick = () => {
-        if (card.playable) {
-            console.log(`Card played: ${card.id}`);
+        if (playable) {
+            console.log(`Card played: ${id}`);
 
             // TODO: send card played message
 
@@ -30,25 +21,23 @@ export default function Card({ card }) {
 
     const getFrontContent = () => {
 
-        if (card.colour === "black" && card.action === "wild") {
+        if (colour === "black" && action === "wild") {
             return (
-                <Image
+                <img
                     src="/assets/images/wild.png"
                     alt="Wild Card"
-                    width={118}
-                    height={88}
+                    className="w-28 h-20 object-contain"
                 />
             );
         }
 
-        if (card.colour === "black") {
+        if (colour === "black") {
             return (
                 <>
-                    <Image
-                        src={`/assets/images/front-${card.colour}.png`}
-                        alt={`${card.colour} card`}
-                        width={118}
-                        height={88}
+                    <img
+                        src={`/assets/images/front-${colour}.png`}
+                        alt={`${colour} card`}
+                        className="w-28 h-20 object-contain"
                     />
                     <img
                         src="/assets/images/draw4.png"
@@ -57,7 +46,7 @@ export default function Card({ card }) {
                     />
                     <img
                         className="absolute top-3 left-3 w-6"
-                        src={`/assets/images/${card.action}-blank.png`}
+                        src={`/assets/images/${action}-blank.png`}
                         alt="Action icon"
                     />
                 </>
@@ -67,20 +56,19 @@ export default function Card({ card }) {
         if (action) {
             return (
                 <>
-                    <Image
-                        src={`/assets/images/front-${card.colour}.png`}
-                        alt={`${card.colour} card`}
-                        width={118}
-                        height={88}
+                    <img
+                        src={`/assets/images/front-${colour}.png`}
+                        alt={`${colour} card`}
+                        className="w-28 h-20 object-contain"
                     />
                     <img
-                        src={`/assets/images/${card.action}-${card.colour}.png`}
+                        src={`/assets/images/${action}-${colour}.png`}
                         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16"
-                        alt={`${card.action} icon`}
+                        alt={`${action} icon`}
                     />
                     <img
                         className="absolute top-3 left-3 w-6"
-                        src={`/assets/images/${card.action}-blank.png`}
+                        src={`/assets/images/${action}-blank.png`}
                         alt="Action icon"
                     />
                 </>
@@ -89,17 +77,16 @@ export default function Card({ card }) {
 
         return (
             <>
-                <Image
-                    src={`/assets/images/front-${card.colour}.png`}
-                    alt={`${card.colour} card`}
-                    width={118}
-                    height={88}
+                <img
+                    src={`/assets/images/front-${colour}.png`}
+                    alt={`${colour} card`}
+                    className="w-28 h-20 object-contain"
                 />
                 <p className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-xl font-bold text-shadow-lg">
-                    {card.digit}
+                    {digit}
                 </p>
-                <p className="absolute top-2 left-3 text-white text-sm">{card.digit}</p>
-                <p className="absolute bottom-2 right-3 text-white text-sm">{card.digit}</p>
+                <p className="absolute top-2 left-3 text-white text-sm">{digit}</p>
+                <p className="absolute bottom-2 right-3 text-white text-sm">{digit}</p>
             </>
         );
 
@@ -111,23 +98,19 @@ export default function Card({ card }) {
 
 
     return (
-        <motion.div
-            layoutId={layoutId}
+
+
+        <div
             className={`relative w-24 h-32 rounded-lg shadow-lg ${disableShadow ? "shadow-none" : "shadow-xl"} ${playable ? "cursor-pointer" : "cursor-default"
-                } ${selectable ? "opacity-50" : "opacity-100"} transition-all`}
+                } transition-all`}
             style={{
-                transform: `rotateY(${flip ? 180 - rotationY : rotationY}deg)`,
+
                 transformStyle: "preserve-3d",
             }}
             onClick={onClick}
-            whileHover={{
-                y: playable ? -10 : 0,
-                transition: { duration: 0.3 },
-            }}
         >
 
 
-            {/* Front Face */}
             <div
                 className="absolute inset-0 bg-white rounded-lg flex items-center justify-center overflow-hidden"
                 style={{ backfaceVisibility: "hidden" }}
@@ -135,7 +118,6 @@ export default function Card({ card }) {
                 {getFrontContent()}
             </div>
 
-            {/* Back Face */}
             <div
                 className="absolute inset-0 bg-gray-300 rounded-lg flex items-center justify-center overflow-hidden"
                 style={{
@@ -143,13 +125,15 @@ export default function Card({ card }) {
                     backfaceVisibility: "hidden",
                 }}
             >
-                <Image
+                <img
                     src="/assets/images/backside.png"
                     alt="Back of the card"
-                    width={118}
-                    height={88}
+                    className="w-28 h-20 object-contain"
                 />
             </div>
-        </motion.div>
+        </div>
+
+
+
     );
 }
