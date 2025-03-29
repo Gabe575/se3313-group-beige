@@ -59,14 +59,28 @@ export default function UnoBoard({ gameInfo }) {
         const randomColour = colours[Math.floor(Math.random() * colours.length)];
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
 
-        return {
-            colour: randomColour,
-            digit: Math.floor(Math.random() * 10), // Can be 0-9
-            action: randomAction,
-            id: Math.random().toString(36).substr(2, 9), // Random unique ID
-            playable: true, // Assume the card is playable for now
-            disableShadow: false,
-        };
+        let ob;
+        if (Math.random() * 10 > 5) {
+            ob = {
+                colour: randomColour,
+                digit: Math.floor(Math.random() * 10), // Can be 0-9
+                action: null,
+                id: Math.random().toString(36).substr(2, 9), // Random unique ID
+                playable: true, // Assume the card is playable for now
+                disableShadow: false,
+            }
+        } else {
+            ob = {
+                colour: randomColour,
+                digit: null, // Can be 0-9
+                action: randomAction,
+                id: Math.random().toString(36).substr(2, 9), // Random unique ID
+                playable: true, // Assume the card is playable for now
+                disableShadow: false,
+            }
+        }
+
+        return ob;
 
 
 
