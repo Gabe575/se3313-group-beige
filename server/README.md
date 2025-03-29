@@ -18,13 +18,15 @@ This is the backend server for the UNO game project. It's written in C++ using C
 
 ### 1. Clone the repo
 
-````bash
+```bash
 git clone https://github.com/Gabe575/se3313-group-beige.git
 cd se3313-group-beige/server
-````
+```
+
 ### 2. Install dependencies using vcpkg
 
 ```bash
+
 git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg
 ./bootstrap-vcpkg.bat  # Windows
@@ -32,8 +34,8 @@ cd vcpkg
 ./bootstrap-vcpkg.sh   # Linux/macOS
 ```
 
-Then ./vcpkg install
-
+Then ./vcpkg integrate install
+Followed by ./vcpkg install
 
 ### 3. Configure CMake
 
@@ -41,6 +43,7 @@ Then ./vcpkg install
 cd ..
 cmake -B build -S .
 ```
+
 ### 4. Build the Project
 
 ```bash
@@ -54,16 +57,12 @@ cd build
 ctest --output-on-failure
 ```
 
-
 Run with
 
 .\Debug\uno_server.exe
 
-
-
-
 So after each edit run:
-cd ..                 (get to server folder)
+cd .. (get to server folder)
 cmake -B build -S .
 cmake --build build
 cd build
