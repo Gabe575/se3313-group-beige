@@ -4,14 +4,6 @@ import { useParams } from "react-router-dom";
 
 import Card from "./Card";
 
-
-
-
-
-
-
-
-
 export default function UnoBoard({ gameInfo }) {
 
     const [gameState, setGameState] = useState(null);
@@ -62,10 +54,10 @@ export default function UnoBoard({ gameInfo }) {
     function getRandomCard() {
 
         const colours = ['red', 'blue', 'green', 'yellow'];
-        const actions = ['skip', 'reverse', 'draw2', 'wild', 'draw2'];
+        const actions = ['skip', 'reverse', 'plus2', 'wild', 'plus4'];
         const randomColour = colours[Math.floor(Math.random() * colours.length)];
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
-    
+
         return {
             colour: randomColour,
             digit: Math.floor(Math.random() * 10), // Can be 0-9
@@ -74,13 +66,13 @@ export default function UnoBoard({ gameInfo }) {
             playable: true, // Assume the card is playable for now
             disableShadow: false,
         };
-    
-    
-    
-    
-    
+
+
+
+
+
     }
-    
+
     const getSomeCards = (length) => {
         let cards = [];
         for (let i = 0; i < length; i++) {
@@ -97,24 +89,26 @@ export default function UnoBoard({ gameInfo }) {
 
     const renderPlayerHand = (playerIndex) => {
 
-        // Get the players hand
-
-        
         let playerHand = [];
-        if (playerIndex == 0) playerHand = testPlayerInfo.player.hand;
-        if (playerIndex == 1) playerHand = testPlayer2Info.player.hand;
-        if (playerIndex == 2) playerHand = testPlayer3Info.player.hand;
-        if (playerIndex == 3) playerHand = testPlayer4Info.player.hand;
+        if (playerIndex === 0) playerHand = testPlayerInfo.player.hand;
+        if (playerIndex === 1) playerHand = testPlayer2Info.player.hand;
+        if (playerIndex === 2) playerHand = testPlayer3Info.player.hand;
+        if (playerIndex === 3) playerHand = testPlayer4Info.player.hand;
 
-
-        playerHand.forEach(card => {
-            console.log(card)
-        })
+        // Check if the player has more than 4 cards for overlapping
+        const isOverlapping = playerHand.length > 4;
 
         return (
-            <div className="flex justify-center space-x-2 overflow-x-auto">
+            <div
+                className={`flex ${playerIndex === 0 || playerIndex === 3 ? 'justify-center space-x-2' : 'flex-col items-center space-y-2'} 
+        ${isOverlapping ? 'overflow-x-auto' : ''}`}
+            >
                 {playerHand.map((card, index) => (
-                    <Card key={index} {...card} />
+                    <Card
+                        key={index}
+                        {...card}
+                        className={`${isOverlapping ? 'overlap' : ''}`}
+                    />
                 ))}
             </div>
         );
@@ -131,7 +125,7 @@ export default function UnoBoard({ gameInfo }) {
         remainingCards: 15,
         discardPile: getSomeCards(1)
     }
-    
+
     const testPlayerInfo = {
         type: "player_info",
         player: {
@@ -142,13 +136,13 @@ export default function UnoBoard({ gameInfo }) {
         },
         game_id: "a"
     }
-    
+
     const testPlayer2Info = {
         type: "player_info",
         player: {
             name: "p2",
             numCards: 5,
-            hand: getSomeCards(1),
+            hand: getSomeCards(10),
             status: "active"
         },
         game_id: "a"
@@ -158,7 +152,7 @@ export default function UnoBoard({ gameInfo }) {
         player: {
             name: "p3",
             numCards: 5,
-            hand: getSomeCards(1),
+            hand: getSomeCards(5),
             status: "active"
         },
         game_id: "a"
@@ -168,20 +162,17 @@ export default function UnoBoard({ gameInfo }) {
         player: {
             name: "p4",
             numCards: 5,
-            hand: getSomeCards(1),
+            hand: getSomeCards(7),
             status: "active"
         },
         game_id: "a"
     }
-    
+
 
 
 
     return (
         <div className="relative w-full h-[1000px]">
-
-
-            {/* Position player hands */}
             {/* Top player hand */}
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
                 <h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[0]}</h2>
@@ -191,23 +182,21 @@ export default function UnoBoard({ gameInfo }) {
             {/* Left player hand */}
             <div className="absolute top-1/2 left-0 transform -translate-y-1/2">
                 <h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[1]}</h2>
-                <div className="flex flex-col items-center space-y-2">{renderPlayerHand(1)}</div>
+                {renderPlayerHand(1)}
             </div>
 
             {/* Right player hand */}
             <div className="absolute top-1/2 right-0 transform -translate-y-1/2">
                 <h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[2]}</h2>
-                <div className="flex flex-col items-center space-y-2">{renderPlayerHand(2)}</div>
+                {renderPlayerHand(2)}
             </div>
 
-            {/* Bottom player hand (the current player) */}
+            {/* Bottom player hand (current player) */}
             <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 mb-8">
                 <h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[3]}</h2>
                 {renderPlayerHand(3)}
             </div>
         </div>
-
-
     );
 
 
