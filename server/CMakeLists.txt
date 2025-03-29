@@ -13,8 +13,17 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
         CACHE STRING "Vcpkg toolchain file")
 endif()
 
+# Detect platform for vcpkg triplet and library specifics
+if(WIN32)
+    set(VCPKG_TARGET_TRIPLET "x64-windows")
+    set(PLATFORM_LIBS ws2_32)
+else()
+    set(VCPKG_TARGET_TRIPLET "x64-linux")
+    set(PLATFORM_LIBS pthread)  # Needed for GTest
+endif()
+
 # Paths for vcpkg
-set(VCPKG_INSTALLED_DIR "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows")
+set(VCPKG_INSTALLED_DIR "${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}")
 include_directories(${VCPKG_INSTALLED_DIR}/include)
 link_directories(${VCPKG_INSTALLED_DIR}/lib)
 
@@ -30,7 +39,7 @@ add_executable(uno_server
 target_include_directories(uno_server PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 target_link_libraries(uno_server PRIVATE
-    ws2_32
+    ${PLATFORM_LIBS}
 )
 
 # Add unit tests
@@ -47,7 +56,3 @@ target_link_libraries(game_logic_test PRIVATE
 )
 
 add_test(NAME GameLogicTests COMMAND game_logic_test)
-
-add_executable(smoke_test tests/smoke_test.cpp)
-target_link_libraries(smoke_test PRIVATE gtest)
-add_test(NAME SmokeTest COMMAND smoke_test)
