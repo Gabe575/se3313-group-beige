@@ -10,23 +10,31 @@ GameSession::GameSession(std::string id) : game_id(id) {
 // initializes UNO deck and shuffles it
 void GameSession::initialize_deck() {
     std::vector<std::string> colors = {"Red", "Blue", "Green", "Yellow"}; // 4 colours
-    std::vector<std::string> values = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}; // numbered cards 0-9
     std::vector<std::string> special_cards = {"Skip", "Reverse", "Draw Two"}; // special cards
     std::vector<std::string> wild_cards = {"Wild", "Wild Draw Four"}; // wild cards
 
     // Create the deck with all possible color-number combinations.
     for (const auto& color : colors) {
-        for (const auto& value : values) {
-            deck.push_back(color + " " + value); // Example: Red 5
+        // add one 0 card per colour
+        deck.push_back(color  + " 0");
+
+        // add two of each number from 1 to 9 per colour
+        for (int i = 1; i <= 9; i++) {
+            std::string card = color + " " + std::to_string(i);
+            deck.push_back(card);
         }
+        // add two of each action card per colour: Skip, Draw Two, Reverse  
         for (const auto& special : special_cards) {
-            deck.push_back(color + " " + special); // Example Blue Reverse
+            std::string card = color + " " + special;
+            deck.push_back(card);
+            deck.push_back(card);
         }
     }
     
-    // add wild cards (no specific colour)
-    for (const auto& wild : wild_cards) {
-        deck.push_back(wild);
+    // Add 4 Wild and 4 Wild Draw Four cards (no color)
+    for (int i = 0; i < 4; i++) {
+        deck.push_back("Wild");
+        deck.push_back("Wild Draw Four");
     }
     
     // random number generator
@@ -49,8 +57,11 @@ void GameSession::add_player(std::string player_id) {
 
         // deal 7 cards to new player
         for (int i = 0; i < 7; i++) {
-            hands[player_id].push_back(deck.back());
-            deck.pop_back();
+            if (!deck.empty()) {
+                hands[player_id].push_back(deck.back());
+                deck.pop_back();
+            }
+
         }
     }
 }
@@ -86,6 +97,14 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
     else if (card.find("Reverse") != std::string::npos) {
         std::cout << "Reverse card played! Turn order reversed." << std::endl;
         std::reverse(players.begin(), players.end());
+
+         // Update the current_turn index to point to the same player after reversing
+        for (size_t i = 0; i < players.size(); ++i) {
+            if (players[i] == players[current_turn]) {
+                current_turn = (i + 1) % players.size(); // move to the next player in reversed order
+                break;
+            }
+        }
     } 
     // Draw two
     else if (card.find("Draw Two") != std::string::npos) {
@@ -96,14 +115,6 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
             deck.pop_back();
         }
         current_turn = (current_turn + 2) % players.size();
-    } 
-    // Wild Card
-    else if (card.find("Wild") != std::string::npos) {
-        std::cout << "Wild card played! Waiting for " << player_id << " to choose a color..." << std::endl;
-        
-        // Ask the player to select a color
-        //pending_wild_choice = player_id; // Track the player who must choose
-        //wild_color = ""; // Reset wild color until the player selects one
     } 
     // Wild Draw Four
     else if (card.find("Wild Draw Four") != std::string::npos) {
@@ -119,6 +130,14 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         //wild_color = ""; // Reset wild color
         current_turn = (current_turn + 2) % players.size();
     } 
+    // Wild Card
+    else if (card.find("Wild") != std::string::npos) {
+        std::cout << "Wild card played! Waiting for " << player_id << " to choose a color..." << std::endl;
+        
+        // Ask the player to select a color
+        //pending_wild_choice = player_id; // Track the player who must choose
+        //wild_color = ""; // Reset wild color until the player selects one
+    } 
     // Regular card, do nothing
     else {
         current_turn = (current_turn + 1) % players.size();
@@ -132,6 +151,7 @@ json GameSession::to_json() {
         {"players", players},
         {"current_turn", current_turn},
         {"top_card", discard_pile.back()},
-        {"hands", hands}
+        {"hands", hands},
+        {"discard_pile", discard_pile}
     };
 }

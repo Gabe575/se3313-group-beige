@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <iostream>
 #include <random>
+#include <algorithm>
 
 std::string Utils::generate_game_id() {
     static const char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";

@@ -68,8 +68,30 @@ TEST_F(GameLogicTest, ReverseCardReversesOrder) {
     game.hands["player1"] = {reverse_card};
 
     EXPECT_TRUE(game.play_card("player1", reverse_card));
-    EXPECT_EQ(game.to_json()["players"][0], "player1");
-    EXPECT_EQ(game.to_json()["players"][1], "player3"); // Order reversed
+    EXPECT_EQ(game.to_json()["players"][0], "player3");
+    EXPECT_EQ(game.to_json()["players"][1], "player2");
+    EXPECT_EQ(game.to_json()["players"][2], "player1");
+}
+
+// test that reverse card sets next player turn correctly
+TEST_F(GameLogicTest, ReverseCardSetsNextPlayerCorrectly) {
+    game = GameSession("test_game");
+    game.add_player("player1");
+    game.add_player("player2");
+    game.add_player("player3");
+
+    std::string reverse_card = "Red Reverse";
+    game.hands["player2"] = {reverse_card};
+    game.play_card("player2", reverse_card);
+
+    json game_state = game.to_json();
+    const std::vector<std::string> updated_players = game_state["players"];
+
+    // After reversing, the order becomes: [player3, player2, player1]
+    // Since player2 played the card, the next player should be player1
+    std::string expected_next_player = "player1";
+
+    EXPECT_EQ(updated_players[game_state["current_turn"]], expected_next_player);
 }
 
 // Test Draw Two card functionality
