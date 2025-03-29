@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
 
 import Card from "./Card";
+import CardStack from "./CardStack";
 
 export default function UnoBoard({ gameInfo }) {
 
@@ -88,26 +89,31 @@ export default function UnoBoard({ gameInfo }) {
 
 
     const renderPlayerHand = (playerIndex) => {
-
         let playerHand = [];
         if (playerIndex === 0) playerHand = testPlayerInfo.player.hand;
         if (playerIndex === 1) playerHand = testPlayer2Info.player.hand;
         if (playerIndex === 2) playerHand = testPlayer3Info.player.hand;
         if (playerIndex === 3) playerHand = testPlayer4Info.player.hand;
 
-        // Check if the player has more than 4 cards for overlapping
         const isOverlapping = playerHand.length > 4;
+        const isVertical = playerHand.length > 4;
 
         return (
             <div
-                className={`flex ${playerIndex === 0 || playerIndex === 3 ? 'justify-center space-x-2' : 'flex-col items-center space-y-2'} 
-        ${isOverlapping ? 'overflow-x-auto' : ''}`}
+                className={`flex ${playerIndex === 0 || playerIndex === 3
+                        ? isVertical
+                            ? "flex-col items-center space-y-2"
+                            : "justify-center space-x-2"
+                        : isVertical
+                            ? "flex-col items-center space-y-2"
+                            : "flex-col space-y-2"
+                    } ${isOverlapping ? "overflow-y-auto" : ""}`}
             >
                 {playerHand.map((card, index) => (
                     <Card
                         key={index}
                         {...card}
-                        className={`${isOverlapping ? 'overlap' : ''}`}
+                        className={`${isOverlapping ? "overlap" : ""}`}
                     />
                 ))}
             </div>
@@ -172,33 +178,42 @@ export default function UnoBoard({ gameInfo }) {
 
 
     return (
-        <div className="relative w-full h-[1000px]">
-            {/* Top player hand */}
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
-                <h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[0]}</h2>
-                {renderPlayerHand(0)}
+        <div className="relative w-full h-[1000px] bg-red-100">
+            <div className="absolute top-50 left-1/2 transform -translate-x-1/2">
+                <CardStack cards={getSomeCards(10)} direction="horizontal" />
             </div>
+            
 
-            {/* Left player hand */}
-            <div className="absolute top-1/2 left-0 transform -translate-y-1/2">
-                <h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[1]}</h2>
-                {renderPlayerHand(1)}
-            </div>
 
-            {/* Right player hand */}
-            <div className="absolute top-1/2 right-0 transform -translate-y-1/2">
-                <h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[2]}</h2>
-                {renderPlayerHand(2)}
-            </div>
-
-            {/* Bottom player hand (current player) */}
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 mb-8">
-                <h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[3]}</h2>
-                {renderPlayerHand(3)}
-            </div>
         </div>
     );
 
 
 
 }
+
+/*
+
+<div className="absolute top-0 left-1/2 transform -translate-x-1/2">
+<h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[0]}</h2>
+{renderPlayerHand(0)}
+</div>
+
+<div className="absolute top-1/2 left-0 transform -translate-y-1/2">
+<h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[1]}</h2>
+{renderPlayerHand(1)}
+</div>
+
+
+<div className="absolute top-1/2 right-0 transform -translate-y-1/2">
+<h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[2]}</h2>
+{renderPlayerHand(2)}
+</div>
+
+
+<div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 mb-8">
+<h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[3]}</h2>
+{renderPlayerHand(3)}
+</div>
+
+*/
