@@ -53,6 +53,12 @@ void GameSession::initialize_deck() {
 void GameSession::add_player(std::string player_id) {
     if (players.size() < 10) {
         players.push_back(player_id);
+
+        // set host if first player
+        if (players.size() == 1) {
+            host = player_id;
+        }
+
         hands[player_id] = std::vector<std::string>(); // create empty hand for player
 
         // deal 7 cards to new player

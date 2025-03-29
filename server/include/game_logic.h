@@ -16,6 +16,7 @@ using json = nlohmann::json;
 class GameSession {
 public:
     std::string game_id; // unique identifier for game session
+    std::string host;
     std::vector<std::string> players; // list of player ids in game
     std::unordered_map<std::string, std::vector<std::string>> hands; // maps each player id to their current hand of cards
     std::vector<std::string> deck; // main draw pile for game
