@@ -20,6 +20,10 @@ WEBSOCKETS
 4. Lobby - Waiting for other players to connect, back button, view # of players in game (+ player names?), player who created lobby gets to start the game once 4 players have connected
     - Get # of players, and player names
     - Player who created lobby send (start game)
+    - GameInfo:
+        - host: ""
+        - currentPlayers: ["", "",...]
+        - game_id: ""
 5. Game - shows all 4 players + their names, how many cards are in the other players decks, whose turn it is, the cards in the middle
 
 

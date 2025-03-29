@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router";
 import { useEffect, useState, useRef } from "react";
-import { SOCKET_URL } from '../util/config';
+import { useSocket } from "./WebSocketProvider";
 
 export default function GameList() {
     const [games, setGames] = useState([]);
-    const socket = useRef(null); // WebSocket reference
     const navigate = useNavigate();
+
+    const socket = useSocket();
 
     // Redirect back to main menu if no name
     useEffect(() => {
@@ -13,45 +14,37 @@ export default function GameList() {
             navigate('/');
         }
 
-        // Initialize WebSocket connection
-        socket.current = new WebSocket(SOCKET_URL);
-        socket.current.onopen = () => {
-            console.log("Connected to WebSocket server");
-
-            // Once connected, request the list of available games
-            socket.current.send(
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
                 JSON.stringify({ type: "get_available_games" })
             );
-        };
+        }
 
-        socket.current.onerror = (error) => {
-            console.error("WebSocket error:", error);
-        };
-
-        // Handle incoming messages from the WebSocket server
-        socket.current.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            console.log("Received from server:", data);
-
-            if (data.type === "available_games") {
-                // Update the list of available games
-                setGames(data.games);
-            }
-        };
-
-        // Cleanup WebSocket connection when the component is unmounted
-        return () => {
-            if (socket.current) {
-                socket.current.close();
-            }
-        };
     }, [navigate]);
+
+    useEffect(() => {
+        if (socket) {
+            // Handle incoming messages
+            socket.onmessage = (event) => {
+                console.log('Received message:', event.data);
+                if (JSON.parse(event.data).type == "available_games") {
+                    setGames(JSON.parse(event.data).games)
+                }
+            };
+        }
+
+        return () => {
+            if (socket) {
+                socket.onmessage = null;
+            }
+        };
+    }, [socket]);
 
     const joinGame = (gameId) => {
         const playerName = localStorage.getItem('name');
 
         // Send the request to join the game
-        socket.current.send(
+        socket.send(
             JSON.stringify({ type: "join_game", game_id: gameId, player_name: playerName })
         );
 

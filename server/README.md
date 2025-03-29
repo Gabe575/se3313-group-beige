@@ -67,3 +67,7 @@ cmake -B build -S .
 cmake --build build
 cd build
 .\Debug\uno_server.exe
+
+or go to this folder in file explorer and double click on runserver.bat
+or .\runserver.bat
+(from /server)
