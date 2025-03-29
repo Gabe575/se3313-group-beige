@@ -5,6 +5,20 @@ npm run dev
 Go to localhost:5173 (or other port look at the console log for the link)
 
 
+Assumptions:
+    - Always 4 players
+
+
+Cards have the following info:
+    - colour
+    - digit
+    - action
+    - playable????
+    - isFaceUp ???
+
+
+
+
 WEBSOCKETS
 
 ### Page breakdown
@@ -73,7 +87,7 @@ Recieve: {type: game_state, currentPlayers: ["", "",...], host: "", game_id: "",
 
 
 Send: {type: get_player_info, player_name: name, game_id: gameId}
-Recieve: {type: player_info, player: {name: "", #ofCards: int, hand: [{card}, {card},...], status: "active" | "disconnected" | "waiting"}, game_id: gameId}
+Recieve: {type: player_info, player: {name: "", numCards: int, hand: [{card}, {card},...], status: "active" | "disconnected" | "waiting"}, game_id: gameId}
 
 
 

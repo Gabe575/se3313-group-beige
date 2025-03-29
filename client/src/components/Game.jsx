@@ -67,11 +67,11 @@ export default function Game() {
     const testGameInfo = {
         currentPlayers: ["p1", "p2", "p3", "p4"], 
         host: "", 
-        game_id: ""
+        game_id: "a"
     }
 
 
-
+    /*
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
 
@@ -96,7 +96,8 @@ export default function Game() {
 
         </div>
     )
-
+    */
+    return (<UnoBoard gameInfo={testGameInfo} />);
 
 
 }
