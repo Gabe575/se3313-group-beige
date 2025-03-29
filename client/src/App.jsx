@@ -6,6 +6,7 @@ import GameList from './components/GameList';
 import CreateGame from './components/CreateGame';
 import Lobby from './components/Lobby';
 import NotFound from './components/NotFound';
+import { WebSocketProvider } from './components/WebSocketProvider';
 
 
 const Root = styled.div`
@@ -17,7 +18,7 @@ const Root = styled.div`
 
 export default function App() {
     return (
-        <Root>
+        <WebSocketProvider>
             <Router>
                 <Routes>
                     <Route path="/" element={<MainMenu />} />
@@ -31,6 +32,6 @@ export default function App() {
                     <Route path='/*' element={<NotFound />} />
                 </Routes>
             </Router>
-        </Root>
+        </WebSocketProvider>
     )
 }
