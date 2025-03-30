@@ -3,23 +3,33 @@ import { useNavigate } from "react-router";
 import { useSocket } from "./WebSocketProvider";
 
 export default function MainMenu() {
-    // Player name is stored in localstorage so if name is in storage display that instead so it still shows and they dont have to put their name in again after reloading or switching pages
-    const [playerName, setPlayerName] = useState(localStorage.getItem('name') ? localStorage.getItem('name') : "");
-    const [validName, setValidName] = useState(localStorage.getItem('name') ? true : false);
-    const [saved, setSaved] = useState(localStorage.getItem('name') ? true : false);
+    // Player name is stored in sessionStorage so if name is in storage display that instead so it still shows and they dont have to put their name in again after reloading or switching pages
+    const [playerName, setPlayerName] = useState(sessionStorage.getItem('name') || "");
 
+    const [saved, setSaved] = useState(sessionStorage.getItem('name') ? true : false);
+
+    // For the join game functionality
     const [gameName, setGameName] = useState("");
 
     let navigate = useNavigate();
-
     const socket = useSocket();
 
-    // TODO: the client should be sending a request for a name, not just claiming it and then sending it to the server. They should send the name on submit, and wait until the 
-    //          server replies okay and then set the username and allow the user to enter into the other pages
     useEffect(() => {
+
         if (socket) {
             socket.onmessage = (event) => {
-                console.log('Received message:', event.data);
+                const data = JSON.parse(event.data);
+                console.log("Received message:", data);
+
+                if (data.type === "name_confirmation") {
+                    if (data.status === "ok") {
+                        sessionStorage.setItem("name", data.name);
+                        console.log("Set name to " + data.name);
+                        setSaved(true);
+                    } else {
+                        alert("Name taken.");
+                    }
+                }
             };
         }
         return () => {
@@ -31,28 +41,44 @@ export default function MainMenu() {
 
     const handleNameChange = (e) => {
         setPlayerName(e.target.value);
-        setValidName(e.target.value.trim() !== "");
         setSaved(false);
+
+        if (e.target.value === sessionStorage.getItem('name')) {
+            setSaved(true);
+        } 
     };
 
     const submit = () => {
-        if (validName) {
-            localStorage.setItem("name", playerName);
-            setSaved(true);
+        if (playerName.trim() === "") {
+            return alert("Please enter a valid name!");
+        }
+
+        if (saved) return console.log('Name already saved');
+
+
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            alert("WebSocket not connected. Please try again.");
+            return;
         }
 
         // Send player name to the server
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(
-                JSON.stringify({ type: "create_player", player_name: playerName })
-            );
-        }
+        socket.send(
+            JSON.stringify({ type: "create_player", player_name: playerName })
+        );
     };
-    
-    
+
+
     const handleGameNameChange = (e) => {
         setGameName(e.target.value);
     }
+
+    const joinGame = () => {
+        if (!gameName.trim()) {
+            alert("Please enter a game name!");
+            return;
+        }
+        navigate(`/lobby/${gameName}`);
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-red-600 p-4">
@@ -98,7 +124,7 @@ export default function MainMenu() {
                 />
                 <button
                     className={`w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg ${saved ? "hover:bg-yellow-700" : "opacity-50 cursor-not-allowed"}`}
-                    onClick={() => gameName != "" ? navigate(`/lobby/${gameName}`) : alert("Please enter a game name!")}
+                    onClick={() => joinGame()}
                     disabled={!saved}>
                     Join Game
                 </button>

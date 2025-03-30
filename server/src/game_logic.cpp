@@ -2,6 +2,8 @@
 #include <iostream>
 #include <random>
 
+GameSession::GameSession() : game_id(""), host(""), current_turn(0), pending_wild_choice(""), wild_color("") {}
+
 // initialize game session with a given game ID
 GameSession::GameSession(std::string id) : game_id(id) {
     initialize_deck(); // setup UNO deck at start of game

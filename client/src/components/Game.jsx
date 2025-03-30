@@ -65,11 +65,14 @@ export default function Game() {
     // TODO: put gameinfo into uno board component
 
     const testGameInfo = {
-        currentPlayers: ["p1", "p2", "p3", "p4"], 
-        host: "", 
+        currentPlayers: ["p1", "p2", "p3", "p4"],
+        host: "",
         game_id: "a"
     }
 
+
+
+    // Keep this its good I just need to not redirect away right now during testing
 
     /*
     return (

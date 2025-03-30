@@ -1,13 +1,6 @@
-import { act, useEffect } from "react";
+// Creates a card that shows the corresponding card image to the properties etc
 
-
-
-export default function Card({ action, colour, digit, disableShadow, id, playable, className }) {
-
-    useEffect(() => {
-
-    }, [action])
-
+export default function Card({ action, colour, digit, disableShadow = false, id, playable, className, hidden }) {
 
     // TODO: check
     const onClick = () => {
@@ -19,7 +12,7 @@ export default function Card({ action, colour, digit, disableShadow, id, playabl
         }
     };
 
-    const getFrontContent = () => {
+    const getContent = () => {
         let imagePath = "";
 
         if (action) {
@@ -31,6 +24,9 @@ export default function Card({ action, colour, digit, disableShadow, id, playabl
             imagePath = `/assets/images/${colour}_${digit}.png`;
         }
 
+        // Overwrite with backside if hidden
+        if (hidden) imagePath = `/assets/images/back.png`;
+
         return (
             <img
                 src={imagePath}
@@ -39,10 +35,6 @@ export default function Card({ action, colour, digit, disableShadow, id, playabl
             />
         );
     }
-
-
-
-
 
     return (
         <div
@@ -56,7 +48,7 @@ export default function Card({ action, colour, digit, disableShadow, id, playabl
                 className="absolute inset-0 bg-white rounded-lg flex items-center justify-center overflow-hidden"
                 style={{ backfaceVisibility: "hidden" }}
             >
-                {getFrontContent()}
+                {getContent()}
             </div>
 
             <div

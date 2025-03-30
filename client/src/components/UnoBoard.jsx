@@ -2,18 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
 
-import Card from "./Card";
 import CardStack from "./CardStack";
 
 export default function UnoBoard({ gameInfo }) {
 
     const [gameState, setGameState] = useState(null);
-    const [playerInfo, setPlayerInfo] = useState(null);
-
-    // Self, left, top, right
-    const [leftPlayerInfo, setLeftPlayerInfo] = useState(null);
-    const [topPlayerInfo, setTopPlayerInfo] = useState(null);
-    const [rightPlayerInfo, setRightPlayerInfo] = useState(null);
+    const [allPlayersInfo, setAllPlayersInfo] = useState(null);
 
 
     const { gameId } = useParams();
@@ -29,7 +23,7 @@ export default function UnoBoard({ gameInfo }) {
 
 
         // TODO redirect them or something if their name isnt in the player list
-        if (!gameInfo.currentPlayers.includes(localStorage.getItem('name'))) {
+        if (!gameInfo.currentPlayers.includes(sessionStorage.getItem('name'))) {
             console.log('player not allowed in lobby!');
         }
 
@@ -40,13 +34,16 @@ export default function UnoBoard({ gameInfo }) {
 
         // TODO: remove this is to test the layout
         setGameState(testGameState);
-        setPlayerInfo(testPlayerInfo);
+
+        let info = {
+            p1: testPlayerInfo,
+            p2: testPlayer2Info,
+            p3: testPlayer3Info,
+            p4: testPlayer4Info,
+        }
 
 
-        setLeftPlayerInfo(testPlayer2Info);
-        setTopPlayerInfo(testPlayer3Info);
-        setRightPlayerInfo(testPlayer4Info);
-
+        setAllPlayersInfo(info);
 
     }, [gameInfo]);
 
@@ -59,19 +56,28 @@ export default function UnoBoard({ gameInfo }) {
         const randomColour = colours[Math.floor(Math.random() * colours.length)];
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
 
-        return {
-            colour: randomColour,
-            digit: Math.floor(Math.random() * 10), // Can be 0-9
-            action: randomAction,
-            id: Math.random().toString(36).substr(2, 9), // Random unique ID
-            playable: true, // Assume the card is playable for now
-            disableShadow: false,
-        };
+        let ob;
+        if (Math.random() * 10 > 5) {
+            ob = {
+                colour: randomColour,
+                digit: Math.floor(Math.random() * 10), // Can be 0-9
+                action: null,
+                id: Math.random().toString(36).substr(2, 9), // Random unique ID
+                playable: true, // Assume the card is playable for now
+                disableShadow: false,
+            }
+        } else {
+            ob = {
+                colour: randomColour,
+                digit: null, // Can be 0-9
+                action: randomAction,
+                id: Math.random().toString(36).substr(2, 9), // Random unique ID
+                playable: true, // Assume the card is playable for now
+                disableShadow: false,
+            }
+        }
 
-
-
-
-
+        return ob;
     }
 
     const getSomeCards = (length) => {
@@ -84,41 +90,6 @@ export default function UnoBoard({ gameInfo }) {
 
 
 
-
-
-
-
-    const renderPlayerHand = (playerIndex) => {
-        let playerHand = [];
-        if (playerIndex === 0) playerHand = testPlayerInfo.player.hand;
-        if (playerIndex === 1) playerHand = testPlayer2Info.player.hand;
-        if (playerIndex === 2) playerHand = testPlayer3Info.player.hand;
-        if (playerIndex === 3) playerHand = testPlayer4Info.player.hand;
-
-        const isOverlapping = playerHand.length > 4;
-        const isVertical = playerHand.length > 4;
-
-        return (
-            <div
-                className={`flex ${playerIndex === 0 || playerIndex === 3
-                        ? isVertical
-                            ? "flex-col items-center space-y-2"
-                            : "justify-center space-x-2"
-                        : isVertical
-                            ? "flex-col items-center space-y-2"
-                            : "flex-col space-y-2"
-                    } ${isOverlapping ? "overflow-y-auto" : ""}`}
-            >
-                {playerHand.map((card, index) => (
-                    <Card
-                        key={index}
-                        {...card}
-                        className={`${isOverlapping ? "overlap" : ""}`}
-                    />
-                ))}
-            </div>
-        );
-    };
 
 
     const testGameState = {
@@ -175,45 +146,67 @@ export default function UnoBoard({ gameInfo }) {
     }
 
 
+    function getOpponentCards(opponentName) {
+        
+        // Cant render a card if you got no info
+        if (!allPlayersInfo) return null;
 
+        // Returns only the info needed for a basic hidden card
+        let getHiddenCard = () => {
+            return {
+                id: Math.random().toString(36).substr(2, 9), // Please dont collide
+                playable: false,
+                hidden: true
+            }
+        }
+        // Get number of cards in their hand currently
+        let infoOnPlayer;
+        for (let key in allPlayersInfo) {
+            if (allPlayersInfo[key].player.name === opponentName) {
+                infoOnPlayer = allPlayersInfo[key].player;
+                break;
+            }
+        }
+        let numOfCards = infoOnPlayer.hand.length;
+
+        // Get a hidden card component for each in their hand
+        let opponentCards = [];
+        for (let i = 0; i < numOfCards; i++) {
+            opponentCards.push(getHiddenCard());
+        }
+        return opponentCards;
+    }
 
     return (
         <div className="relative w-full h-[1000px] bg-red-100">
-            <div className="absolute top-50 left-1/2 transform -translate-x-1/2">
-                <CardStack cards={getSomeCards(10)} direction="horizontal" />
-            </div>
             
+            <div className="absolute top-25 left-1/2 transform -translate-x-1/2">\
+                <div className="text-center">
+                    <h2 className="text-xl">{gameInfo.currentPlayers[0]}</h2>
+                </div>
+                <div>
+                    <CardStack cards={getOpponentCards(gameInfo.currentPlayers[0])} direction="horizontal" />
+                </div>
+                
+            </div>
 
+            <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
+                <h2 className="text-xl text-center">{gameInfo.currentPlayers[1]}</h2>
+                <CardStack cards={getOpponentCards(gameInfo.currentPlayers[1])} direction="vertical" />
+            </div>
+
+
+            <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
+                <h2 className="text-xl text-center">{gameInfo.currentPlayers[2]}</h2>
+                <CardStack cards={getOpponentCards(gameInfo.currentPlayers[2])} direction="vertical" />
+            </div>
+
+
+            <div className="absolute bottom-25 left-1/2 transform -translate-x-1/2 mb-8">
+                <h2 className="text-xl text-center">{gameInfo.currentPlayers[3]}</h2>
+                <CardStack cards={getSomeCards(7)} direction="horizontal" />
+            </div>
 
         </div>
     );
-
-
-
 }
-
-/*
-
-<div className="absolute top-0 left-1/2 transform -translate-x-1/2">
-<h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[0]}</h2>
-{renderPlayerHand(0)}
-</div>
-
-<div className="absolute top-1/2 left-0 transform -translate-y-1/2">
-<h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[1]}</h2>
-{renderPlayerHand(1)}
-</div>
-
-
-<div className="absolute top-1/2 right-0 transform -translate-y-1/2">
-<h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[2]}</h2>
-{renderPlayerHand(2)}
-</div>
-
-
-<div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 mb-8">
-<h2 className="text-xl text-center mb-4">{gameInfo.currentPlayers[3]}</h2>
-{renderPlayerHand(3)}
-</div>
-
-*/
