@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSocket } from "./WebSocketProvider";
+import { useNavigate } from "react-router";
 
 export default function Lobby() {
     const { gameId } = useParams();
@@ -8,7 +9,25 @@ export default function Lobby() {
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
 
+
+    const [requestSent, setRequestSent] = useState(false);
+
     const socket = useSocket();
+
+    let navigate = useNavigate();
+
+    function sendGetInfo() {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            setIsLoading(true);
+            setErrorMessage("");
+
+            socket.send(
+                JSON.stringify({ type: "get_game_info", game_id: gameId })
+            );
+
+            setRequestSent(true);
+        }
+    }
 
     useEffect(() => {
         if (socket) {
@@ -17,8 +36,12 @@ export default function Lobby() {
                 console.log('Received message:', event.data);
 
                 if (data.type === "game_info") {
+
+                    // If no game exists, tell the user
+                    if (data.status === "not_found") setErrorMessage(`No lobby found "${gameId}"!`);
+                    
                     // Update the lobby info
-                    setGameInfo(data.gameInfo);
+                    setGameInfo(data);
                     setIsLoading(false);
                 }
             };
@@ -30,20 +53,24 @@ export default function Lobby() {
         };
     }, [socket]);
 
-    // Send a request when the page loads
+    // Send a request when the page loads or reloads
     useEffect(() => {
         if (socket && socket.readyState === WebSocket.OPEN) {
-            setIsLoading(true);
-            setErrorMessage("");
-
-            socket.send(
-                JSON.stringify({ type: "get_game_info", game_id: gameId })
-            );
-
+            sendGetInfo();
+        } else {
+            const interval = setInterval(() => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    sendGetInfo();
+                    clearInterval(interval);
+                }
+            }, 500); // Check every 500ms
+    
+            return () => clearInterval(interval);
         }
-    }, [gameId]);
+    }, [socket]);
 
     useEffect(() => {
+        if (!requestSent) sendGetInfo();
         if (isLoading) {
             const timeout = setTimeout(() => {
                 setErrorMessage("Failed to receive game info. Please try again later.");
@@ -73,7 +100,7 @@ export default function Lobby() {
                 )}
 
                 {isLoading ? (
-                    <div className="text-center">Loading players...</div>
+                    <div className="text-center">Loading...</div>
                 ) : null}
                 
                 {(!isLoading && errorMessage == "") ? (
@@ -100,6 +127,14 @@ export default function Lobby() {
                         Start Game!
                     </button>
                 ) : null}
+
+                <button
+                    className={`w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-700`}
+                    onClick={() => navigate(`/`)}>
+                    Leave lobby
+                </button>
+
+
             </div>
         </div>
     );
