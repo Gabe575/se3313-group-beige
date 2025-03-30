@@ -26,6 +26,8 @@ public:
     std::string pending_wild_choice = "";
     std::string wild_color = "";
 
+    GameSession();
+
     /**
      * @brief Constructor: Initializes the game session with a unique ID.
      * @param id The unique identifier for the game session.

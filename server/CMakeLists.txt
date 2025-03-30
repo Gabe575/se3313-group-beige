@@ -31,8 +31,6 @@ link_directories(${VCPKG_INSTALLED_DIR}/lib)
 add_executable(uno_server
     src/server.cpp
     src/game_logic.cpp
-    src/player_manager.cpp
-    src/utils.cpp
 )
 
 # Include headers
