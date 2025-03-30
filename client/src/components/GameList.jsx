@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSocket } from "./WebSocketProvider";
 
 export default function GameList() {
@@ -7,6 +7,9 @@ export default function GameList() {
     const navigate = useNavigate();
 
     const socket = useSocket();
+
+
+    const requestedToJoin = useRef(null);
 
     // Redirect back to main menu if no name
     useEffect(() => {
@@ -28,9 +31,17 @@ export default function GameList() {
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 console.log('Received message:', data);
-                if (data.type == "available_games") {
+                if (data.type === "available_games") {
                     setGames(data.games)
                 }
+
+                // If they're allowed to join, join
+                console.log(requestedToJoin);
+                console.log(data.game_id);
+                if (data.type === "join_confirmation" && requestedToJoin.current === data.game_id) {
+                    navigate(`/lobby/${requestedToJoin.current}`);
+                }
+
             };
         }
 
@@ -44,15 +55,14 @@ export default function GameList() {
     const joinGame = (gameId) => {
         const playerName = localStorage.getItem('name');
 
+        requestedToJoin.current = gameId;
+
         // Send the request to join the game
         socket.send(
             JSON.stringify({ type: "join_game", game_id: gameId, player_name: playerName })
         );
-
-        // TODO: should this be after the server allows them to connect? possible race condition with multiple connecting at the same time????
-
-        //TODO: check navigation
-        navigate(`/lobby/${gameId}`);
+        
+        // TODO: set timeout so that if they dont recieve a response allowing them to join, they dont hang
     };
 
     return (

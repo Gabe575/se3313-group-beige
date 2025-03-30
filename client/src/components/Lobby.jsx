@@ -43,6 +43,12 @@ export default function Lobby() {
                     // Update the lobby info
                     setGameInfo(data);
                     setIsLoading(false);
+
+                    // Double check their name is in the list of current players. If not kick them
+                    if (!data.currentPlayers?.find(player => player===localStorage.getItem('name'))) {
+                        alert("Cannot join lobby. Invalid permissions.")
+                        navigate('/');
+                    }
                 }
             };
         }
