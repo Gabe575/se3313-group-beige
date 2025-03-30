@@ -23,7 +23,7 @@ export default function UnoBoard({ gameInfo }) {
 
 
         // TODO redirect them or something if their name isnt in the player list
-        if (!gameInfo.currentPlayers.includes(localStorage.getItem('name'))) {
+        if (!gameInfo.currentPlayers.includes(sessionStorage.getItem('name'))) {
             console.log('player not allowed in lobby!');
         }
 

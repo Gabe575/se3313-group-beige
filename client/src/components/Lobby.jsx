@@ -45,7 +45,7 @@ export default function Lobby() {
                     setIsLoading(false);
 
                     // Double check their name is in the list of current players. If not kick them
-                    if (!data.currentPlayers?.find(player => player===localStorage.getItem('name'))) {
+                    if (!data.currentPlayers?.find(player => player===sessionStorage.getItem('name'))) {
                         alert("Cannot join lobby. Invalid permissions.")
                         navigate('/');
                     }
@@ -126,7 +126,7 @@ export default function Lobby() {
                     </>
                 ) : null}
 
-                {gameInfo?.currentPlayers?.length == 4 && gameInfo?.host == localStorage.getItem('name') ? (
+                {gameInfo?.currentPlayers?.length == 4 && gameInfo?.host == sessionStorage.getItem('name') ? (
                     <button
                         className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex justify-center items-center"
                         onClick={startGame}>

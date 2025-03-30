@@ -13,7 +13,7 @@ export default function GameList() {
 
     // Redirect back to main menu if no name
     useEffect(() => {
-        if (localStorage.getItem('name') == null) {
+        if (sessionStorage.getItem('name') == null) {
             navigate('/');
         }
 
@@ -36,8 +36,6 @@ export default function GameList() {
                 }
 
                 // If they're allowed to join, join
-                console.log(requestedToJoin);
-                console.log(data.game_id);
                 if (data.type === "join_confirmation" && requestedToJoin.current === data.game_id) {
                     navigate(`/lobby/${requestedToJoin.current}`);
                 }
@@ -53,7 +51,7 @@ export default function GameList() {
     }, [socket]);
 
     const joinGame = (gameId) => {
-        const playerName = localStorage.getItem('name');
+        const playerName = sessionStorage.getItem('name');
 
         requestedToJoin.current = gameId;
 

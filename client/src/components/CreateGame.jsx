@@ -34,7 +34,7 @@ export default function CreateGame() {
 
     // Redirect back to main menu if no name
     useEffect(() => {
-        if (localStorage.getItem('name') == null) {
+        if (sessionStorage.getItem('name') == null) {
             navigate('/');
         }
     }, [navigate]);
@@ -46,7 +46,7 @@ export default function CreateGame() {
 
     const sendCreateRequest = () => {
         if (validGameName) {
-            const playerName = localStorage.getItem('name');
+            const playerName = sessionStorage.getItem('name');
 
             // Send request to create a new game
             const requestPayload = {
