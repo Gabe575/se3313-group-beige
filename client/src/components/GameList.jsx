@@ -63,11 +63,11 @@ export default function GameList() {
                     {games.length > 0 ? (
                         games.map((game) => (
                             <li
-                                key={game.id}
+                                key={game[1]}
                                 className="p-2 bg-gray-200 rounded-lg text-center cursor-pointer hover:bg-gray-400 transition"
-                                onClick={() => joinGame(game.id)} // Click to join
+                                onClick={() => joinGame(game[1])}
                             >
-                                Join - {game.name}
+                                Join - {game[1]}
                             </li>
                         ))
                     ) : (
