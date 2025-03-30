@@ -167,6 +167,36 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
             response["currentPlayers"] = session.players;
             response["host"] = session.players.empty() ? "" : session.players.front();
             response["status"] = "ok";
+            // To tell the players polling for game_info that the game has started
+            response["game_started"] = session.game_started;
+        }
+        conn.send_text(response.dump());
+    }
+
+    // handle host starting a game
+    else if (type == "start_game") {
+        std::string id = received["game_id"];
+        std::string player = received["player_name"];
+        json response;
+    
+        response["type"] = "start_confirmation";
+        response["game_id"] = id;
+    
+        std::lock_guard<std::mutex> lock(game_mutex);
+    
+        if (!game_sessions.count(id)) {
+            response["status"] = "not_found";
+        } else {
+            GameSession& session = game_sessions[id];
+    
+            if (session.host != player) {
+                response["status"] = "not_host";
+            } else if (session.game_started) {
+                response["status"] = "already_started";
+            } else {
+                session.game_started = true; 
+                response["status"] = "ok";
+            }
         }
         conn.send_text(response.dump());
     }

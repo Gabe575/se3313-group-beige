@@ -42,7 +42,15 @@ export default function Lobby() {
                         navigate('/');
                         return;
                     }
-                    
+
+                    // Recived the game started flag - host started the game -> navigate to game
+                    if (data.game_started) {
+
+                        // Once in the game, request game state
+                        navigate(`/game/${data.game_id}`);
+
+                    }
+
                     // Update the lobby info
                     setGameInfo(data);
                     setIsLoading(false);
@@ -72,7 +80,7 @@ export default function Lobby() {
                     sendGetInfo();
                     clearInterval(interval);
                 }
-            }, 500); // Check every 500ms
+            }, 500);
     
             return () => clearInterval(interval);
         }
@@ -110,6 +118,28 @@ export default function Lobby() {
     const startGame = () => {
         // Send request to server to start game
         console.log('Not implemented! Send request to start to server');
+
+        // 1. Validate that the host is this client again
+        // 2. Send request to server to start the game
+        // 3. All clients in game recieve game start message (or extension on game_info?)
+        // 4. Clients redirect to game, each ask for game state
+        // 5. Server provides intial game state
+        // ....
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            
+            socket.send(
+                JSON.stringify({ type: "start_game", game_id: gameId })
+            );
+
+        }
+
+
+
+
+
+
+
     }
 
     const leaveLobby = () => {

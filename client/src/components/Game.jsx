@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSocket } from "./WebSocketProvider";
+import { useNavigate } from "react-router";
 
 import UnoBoard from "./UnoBoard";
 
@@ -13,7 +14,10 @@ export default function Game() {
 
     const [gameState, setGameState] = useState(null);
 
+    const [requestSent, setRequestSent] = useState(false);
+
     const socket = useSocket();
+    let navigate = useNavigate();
 
     // Listen for messages from the socket
     useEffect(() => {
@@ -23,9 +27,29 @@ export default function Game() {
                 console.log('Received message:', event.data);
 
                 if (data.type === "game_info") {
-                    // Update the lobby info
-                    setGameInfo(data.gameInfo);
+
+                    // If no game exists, tell the user
+                    if (data.status === "not_found") {
+                        alert("Lobby not found!");
+                        navigate('/');
+                        return;
+                    }
+
+                    // Update the game info
+                    setGameInfo(data);
                     setIsLoading(false);
+
+                    // If the player isnt in the list of players, kick them to menu
+                    if (!data.currentPlayers?.find(player => player===sessionStorage.getItem('name'))) {
+                        alert("Cannot join lobby. Invalid permissions.")
+                        navigate('/');
+                        return;
+                    }
+
+                    // If the game hasnt started yet, kick them to lobby
+                    if (!data.game_started) {
+                        navigate(`/lobby/${data.game_id}`);
+                    }
                 }
             };
         }
@@ -38,6 +62,7 @@ export default function Game() {
 
     // Send a request when the page loads
     useEffect(() => {
+        console.log('here')
         if (socket && socket.readyState === WebSocket.OPEN) {
             setIsLoading(true);
             setErrorMessage("");
@@ -47,15 +72,43 @@ export default function Game() {
             );
 
         }
-    }, [gameId]);
+    }, [socket, gameId]);
+
+    // Send a request when the page loads or reloads
+    useEffect(() => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            sendGetInfo();
+        } else {
+            const interval = setInterval(() => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    sendGetInfo();
+                    clearInterval(interval);
+                }
+            }, 500);
+    
+            return () => clearInterval(interval);
+        }
+    }, [socket]);
+
+    function sendGetInfo() {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+                JSON.stringify({ type: "get_game_info", game_id: gameId })
+            );
+            setRequestSent(true);
+        }
+    }
+
+
 
     // Timeout and show error if the basic game data cannot be found on load
     useEffect(() => {
+        if (!requestSent) sendGetInfo();
         if (isLoading) {
             const timeout = setTimeout(() => {
                 setErrorMessage("Failed to receive game info. Please try again later.");
                 setIsLoading(false);
-            }, 5000);
+            }, 2500);
 
             return () => clearTimeout(timeout);
         }
@@ -74,7 +127,7 @@ export default function Game() {
 
     // Keep this its good I just need to not redirect away right now during testing
 
-    /*
+    
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
 
@@ -92,15 +145,15 @@ export default function Game() {
                             {errorMessage}
                         </p>
                     ) : (
-                        <UnoBoard gameInfo={testGameInfo} />
+                        <UnoBoard gameInfo={gameInfo} />
                     )}
                 </div>
             ) : null}
 
         </div>
     )
-    */
-    return (<UnoBoard gameInfo={testGameInfo} />);
+    
+    //return (<UnoBoard gameInfo={gameInfo} />);
 
 
 }
