@@ -97,6 +97,46 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
         conn.send_text(response.dump());     
     }
 
+    // handle player leaving a game or lobby
+    else if (type =="leave_game") {
+        std::string id = received["game_id"];
+        std::string player = received["player_name"];
+        json response;
+
+        response["type"] = "leave_confirmation";
+        response["game_id"] = id;
+
+        std::lock_guard<std::mutex> lock(game_mutex);
+
+        if (!game_sessions.count(id)) {
+            response["status"] = "not_found";
+        } else {
+            GameSession& session = game_sessions[id];
+            auto it = std::find(session.players.begin(), session.players.end(), player);
+
+            if (it != session.players.end()) {
+                // Remove player from game
+                session.players.erase(it);
+                session.hands.erase(player);
+    
+                // If the player was the host, reassign host
+                if (session.host == player) {
+                    session.host = session.players.empty() ? "" : session.players.front();
+                }
+    
+                // If the game is empty, remove the session
+                if (session.players.empty()) {
+                    game_sessions.erase(id);
+                }
+    
+                response["status"] = "ok";
+            } else {
+                response["status"] = "not_in_game";
+            }
+        }
+        conn.send_text(response.dump());
+    }
+
     // Handle getting available games
     else if (type == "get_available_games") {
         json response;
@@ -145,13 +185,44 @@ void on_close(crow::websocket::connection& conn, const std::string& reason, uint
         std::lock_guard<std::mutex> lock(conn_mutex);
         connections.erase(&conn);
     }
+
+    std::string player_name;
     {
         std::lock_guard<std::mutex> lock(player_mutex);
         if (connection_to_player.count(&conn)){
-            active_players.erase(connection_to_player[&conn]);
+            player_name = connection_to_player[&conn];
+            active_players.erase(player_name);
             connection_to_player.erase(&conn);
         }
     }
+
+    // Remove player from any game they were in
+    if (!player_name.empty()) {
+        std::lock_guard<std::mutex> lock(game_mutex);
+        for (auto it = game_sessions.begin(); it != game_sessions.end(); ) {
+            GameSession& session = it->second;
+            auto player_it = std::find(session.players.begin(), session.players.end(), player_name);
+            
+            if (player_it != session.players.end()) {
+                // Remove player from game
+                session.players.erase(player_it);
+                session.hands.erase(player_name);
+
+                // Reassign host if necessary
+                if (session.host == player_name) {
+                    session.host = session.players.empty() ? "" : session.players.front();
+                }
+
+                // Remove empty games
+                if (session.players.empty()) {
+                    it = game_sessions.erase(it);
+                    continue;
+                }
+            }
+            ++it;
+        }
+    }
+
 }
 
 int main() {
