@@ -12,12 +12,16 @@ export default function Game() {
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
 
-    const [gameState, setGameState] = useState(null);
-
-    const [requestSent, setRequestSent] = useState(false);
-
     const socket = useSocket();
     let navigate = useNavigate();
+
+    const sendGetInfo = () => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+                JSON.stringify({ type: "get_game_info", game_id: gameId })
+            );
+        }
+    }
 
     // Listen for messages from the socket
     useEffect(() => {
@@ -40,7 +44,7 @@ export default function Game() {
                     setIsLoading(false);
 
                     // If the player isnt in the list of players, kick them to menu
-                    if (!data.currentPlayers?.find(player => player===sessionStorage.getItem('name'))) {
+                    if (!data.currentPlayers?.includes(sessionStorage.getItem("name"))) {
                         alert("Cannot join lobby. Invalid permissions.")
                         navigate('/');
                         return;
@@ -58,79 +62,47 @@ export default function Game() {
                 socket.onmessage = null;
             }
         };
-    }, [socket]);
+    }, [socket, navigate]);
 
     // Send a request when the page loads
-    useEffect(() => {
-        console.log('here')
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            setIsLoading(true);
-            setErrorMessage("");
-
-            socket.send(
-                JSON.stringify({ type: "get_game_info", game_id: gameId })
-            );
-
-        }
-    }, [socket, gameId]);
-
-    // Send a request when the page loads or reloads
     useEffect(() => {
         if (socket && socket.readyState === WebSocket.OPEN) {
             sendGetInfo();
         } else {
-            const interval = setInterval(() => {
+            const checkSocketInterval = setInterval(() => {
                 if (socket && socket.readyState === WebSocket.OPEN) {
                     sendGetInfo();
-                    clearInterval(interval);
+                    clearInterval(checkSocketInterval);
                 }
             }, 500);
-    
-            return () => clearInterval(interval);
+
+            return () => clearInterval(checkSocketInterval);
         }
+    }, [socket, gameId]);
+
+    // Poll for gamestate
+    useEffect(() => {
+        const pollInterval = setInterval(() => {
+            sendGetInfo();
+        }, 3000);
+
+        return () => clearInterval(pollInterval);
     }, [socket]);
-
-    function sendGetInfo() {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(
-                JSON.stringify({ type: "get_game_info", game_id: gameId })
-            );
-            setRequestSent(true);
-        }
-    }
-
-
 
     // Timeout and show error if the basic game data cannot be found on load
     useEffect(() => {
-        if (!requestSent) sendGetInfo();
-        if (isLoading) {
-            const timeout = setTimeout(() => {
+        const timeout = setTimeout(() => {
+            if (isLoading) {
                 setErrorMessage("Failed to receive game info. Please try again later.");
                 setIsLoading(false);
-            }, 2500);
+            }
+        }, 2500);
 
-            return () => clearTimeout(timeout);
-        }
+        return () => clearTimeout(timeout);
     }, [isLoading]);
 
-
-    // TODO: put gameinfo into uno board component
-
-    const testGameInfo = {
-        currentPlayers: ["p1", "p2", "p3", "p4"],
-        host: "",
-        game_id: "a"
-    }
-
-
-
-    // Keep this its good I just need to not redirect away right now during testing
-
-    
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-
+        <div>
             {isLoading ? (
                 <div className="flex flex-col justify-center items-center min-h-screen">
                     <p className="p-8">Connecting...</p>
@@ -141,9 +113,16 @@ export default function Game() {
             {!isLoading ? (
                 <div>
                     {errorMessage != "" ? (
-                        <p className="text-red-500">
-                            {errorMessage}
-                        </p>
+                        <div className="flex flex-col justify-center items-center min-h-screen">
+                            <p className="text-red-500">
+                                {errorMessage}
+                            </p>
+                            <button
+                                className={`w-80 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-700`}
+                                onClick={() => navigate('/')}>
+                                Back
+                            </button>
+                        </div>
                     ) : (
                         <UnoBoard gameInfo={gameInfo} />
                     )}
@@ -152,8 +131,4 @@ export default function Game() {
 
         </div>
     )
-    
-    //return (<UnoBoard gameInfo={gameInfo} />);
-
-
 }

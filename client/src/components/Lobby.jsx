@@ -116,44 +116,28 @@ export default function Lobby() {
     }, [isLoading]);
 
     const startGame = () => {
-        // Send request to server to start game
-        console.log('Not implemented! Send request to start to server');
-
-        // 1. Validate that the host is this client again
-        // 2. Send request to server to start the game
-        // 3. All clients in game recieve game start message (or extension on game_info?)
-        // 4. Clients redirect to game, each ask for game state
-        // 5. Server provides intial game state
-        // ....
-
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            
-            socket.send(
-                JSON.stringify({ type: "start_game", game_id: gameId })
-            );
-
+        // Validate that the host is this client again
+        if (!gameInfo.host === sessionStorage.getItem('name')) {
+            alert('Must be host to start the game!');
+            return;
         }
 
-
-
-
-
-
-
+        // Send request to server to start the game
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+                JSON.stringify({ type: "start_game", game_id: gameId, player_name: sessionStorage.getItem('name') })
+            );
+        }
     }
 
     const leaveLobby = () => {
-
         // Send a message to the server that this player is leaving
         if (socket && socket.readyState === WebSocket.OPEN) {
-
             socket.send(
                 JSON.stringify({ type: "leave_game", game_id: gameId, player_name: sessionStorage.getItem('name') })
             );
-
             navigate(`/`);
         }
-
     }
 
     return (

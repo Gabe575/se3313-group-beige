@@ -169,6 +169,12 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
             response["status"] = "ok";
             // To tell the players polling for game_info that the game has started
             response["game_started"] = session.game_started;
+            response["discard_pile"] = session.discard_pile;
+            json player_hands = json::object();
+            for (const auto &[player, hand] : session.hands) {
+                player_hands[player] = hand.size();
+            }
+            response["player_hands"] = player_hands;
         }
         conn.send_text(response.dump());
     }
@@ -200,6 +206,32 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
         }
         conn.send_text(response.dump());
     }
+
+    // handle requests for a hand of cards based on game id and player name
+    else if (type == "get_player_hand") {
+        std::string id = received["game_id"];
+        std::string player = received["player_name"];
+        json response;
+    
+        response["type"] = "player_hand";
+        response["game_id"] = id;
+        response["player_name"] = player;
+    
+        std::lock_guard<std::mutex> lock(game_mutex);
+    
+        if (!game_sessions.count(id)) {
+            response["status"] = "not_found";
+        } else if (!game_sessions[id].hands.count(player)) {
+            response["status"] = "no_hand";
+        } else {
+            response["status"] = "ok";
+            response["hand"] = game_sessions[id].hands[player];
+        }
+        conn.send_text(response.dump());
+    }
+
+
+
 
     // Handle other types (e.g., play_card)
 
