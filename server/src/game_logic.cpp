@@ -51,9 +51,9 @@ void GameSession::initialize_deck() {
     deck.pop_back();
 }
 
-// add new player to game if max limit (10 players) is not reached
+// add new player to game if max limit (4 players) is not reached
 void GameSession::add_player(std::string player_id) {
-    if (players.size() < 10) {
+    if (players.size() < 4) {
         players.push_back(player_id);
 
         // set host if first player
@@ -160,6 +160,7 @@ json GameSession::to_json() {
         {"current_turn", current_turn},
         {"top_card", discard_pile.back()},
         {"hands", hands},
-        {"discard_pile", discard_pile}
+        {"discard_pile", discard_pile},
+        {"game_started", game_started}
     };
 }

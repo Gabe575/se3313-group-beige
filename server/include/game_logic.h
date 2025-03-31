@@ -22,6 +22,7 @@ public:
     std::vector<std::string> deck; // main draw pile for game
     std::vector<std::string> discard_pile; // pile where played cards go
     int current_turn = 0; // index of player whose turn it is
+    bool game_started = false;
 
     std::string pending_wild_choice = "";
     std::string wild_color = "";

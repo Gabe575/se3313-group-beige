@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useSocket } from "./WebSocketProvider";
 
@@ -10,6 +10,9 @@ export default function MainMenu() {
 
     // For the join game functionality
     const [gameName, setGameName] = useState("");
+
+    // The game they requested to join (if any)
+    const requestedToJoin = useRef(null);
 
     let navigate = useNavigate();
     const socket = useSocket();
@@ -30,6 +33,14 @@ export default function MainMenu() {
                         alert("Name taken.");
                     }
                 }
+
+                // If they recieve confirmation to join the lobby they requested to join, join
+                if (data.type === "join_confirmation" && requestedToJoin.current === data.game_id) {
+                    navigate(`/lobby/${requestedToJoin.current}`);
+                }
+
+
+
             };
         }
         return () => {
@@ -77,7 +88,17 @@ export default function MainMenu() {
             alert("Please enter a game name!");
             return;
         }
-        navigate(`/lobby/${gameName}`);
+
+        // Ensure the name saved in storage is the name used to join
+        let name = sessionStorage.getItem('name');
+
+        // Set ref 
+        requestedToJoin.current = gameName;
+
+        // Ask to join the lobby
+        socket.send(
+            JSON.stringify({ type: "join_game", game_id: gameName, player_name: name })
+        );
     };
 
     return (

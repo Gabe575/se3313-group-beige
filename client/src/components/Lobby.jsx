@@ -17,10 +17,9 @@ export default function Lobby() {
     let navigate = useNavigate();
 
     function sendGetInfo() {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            setIsLoading(true);
-            setErrorMessage("");
 
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            
             socket.send(
                 JSON.stringify({ type: "get_game_info", game_id: gameId })
             );
@@ -38,8 +37,20 @@ export default function Lobby() {
                 if (data.type === "game_info") {
 
                     // If no game exists, tell the user
-                    if (data.status === "not_found") setErrorMessage(`No lobby found "${gameId}"!`);
-                    
+                    if (data.status === "not_found") {
+                        alert("Lobby not found!");
+                        navigate('/');
+                        return;
+                    }
+
+                    // Recived the game started flag - host started the game -> navigate to game
+                    if (data.game_started) {
+
+                        // Once in the game, request game state
+                        navigate(`/game/${data.game_id}`);
+
+                    }
+
                     // Update the lobby info
                     setGameInfo(data);
                     setIsLoading(false);
@@ -69,11 +80,28 @@ export default function Lobby() {
                     sendGetInfo();
                     clearInterval(interval);
                 }
-            }, 500); // Check every 500ms
+            }, 500);
     
             return () => clearInterval(interval);
         }
     }, [socket]);
+
+
+    useEffect(() => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            sendGetInfo(); // Initial request
+    
+            // Start polling once the first request completes
+            const interval = setInterval(() => {
+                if (!isLoading) {
+                    sendGetInfo();
+                }
+            }, 1000); // Poll every second
+    
+            return () => clearInterval(interval); // Cleanup interval on unmount
+        }
+    }, [socket, isLoading]);
+
 
     useEffect(() => {
         if (!requestSent) sendGetInfo();
@@ -88,8 +116,28 @@ export default function Lobby() {
     }, [isLoading]);
 
     const startGame = () => {
-        // Send request to server to start game
-        console.log('Not implemented! Send request to start to server');
+        // Validate that the host is this client again
+        if (!gameInfo.host === sessionStorage.getItem('name')) {
+            alert('Must be host to start the game!');
+            return;
+        }
+
+        // Send request to server to start the game
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+                JSON.stringify({ type: "start_game", game_id: gameId, player_name: sessionStorage.getItem('name') })
+            );
+        }
+    }
+
+    const leaveLobby = () => {
+        // Send a message to the server that this player is leaving
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+                JSON.stringify({ type: "leave_game", game_id: gameId, player_name: sessionStorage.getItem('name') })
+            );
+            navigate(`/`);
+        }
     }
 
     return (
@@ -136,7 +184,7 @@ export default function Lobby() {
 
                 <button
                     className={`w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-700`}
-                    onClick={() => navigate(`/`)}>
+                    onClick={() => leaveLobby()}>
                     Leave lobby
                 </button>
 

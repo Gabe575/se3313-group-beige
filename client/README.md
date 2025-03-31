@@ -9,6 +9,22 @@ Assumptions:
     - Always 4 players
 
 
+
+Turn rotation follows the order of currentPlayers array (frontend), / players array (backend).
+
+The user is always the player on the bottom. 
+    - Find the index of their position in the players array.
+    - Go counter clockwise for next turn
+    - So playerIndex + 1 = the name of the player to the left
+    - + 2 = top player
+    - + 3 = right player
+
+    - mod 4 (account for 0 indexed)
+
+
+
+
+
 Cards have the following info:
     - colour
     - digit
