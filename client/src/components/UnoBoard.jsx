@@ -6,15 +6,25 @@ import CardStack from "./CardStack";
 
 export default function UnoBoard({ gameInfo }) {
 
+    const { gameId } = useParams();
     const [gameState, setGameState] = useState(null);
     const [allPlayersInfo, setAllPlayersInfo] = useState(null);
 
-
-    const { gameId } = useParams();
+    
 
     let navigate = useNavigate();
 
-    // TODO: potentially move this so that it waits for players to reconnect
+    const leaveGame = () => {
+        // Send a message to the server that this player is leaving
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+                JSON.stringify({ type: "leave_game", game_id: gameId, player_name: sessionStorage.getItem('name') })
+            );
+            navigate(`/`);
+        }
+    }
+
+
     // Validates the gameInfo and checks the player is allowed to be in this game
     useEffect(() => {
 
@@ -22,7 +32,7 @@ export default function UnoBoard({ gameInfo }) {
         if (gameInfo.currentPlayers.length != 4) navigate(`/lobby/${gameId}`);
 
 
-        // TODO redirect them or something if their name isnt in the player list
+        // Kick them if their name isnt in the list of players
         if (!gameInfo.currentPlayers.includes(sessionStorage.getItem('name'))) {
             console.log('player not allowed in lobby!');
         }
@@ -32,18 +42,7 @@ export default function UnoBoard({ gameInfo }) {
 
 
 
-        // TODO: remove this is to test the layout
-        setGameState(testGameState);
-
-        let info = {
-            p1: testPlayerInfo,
-            p2: testPlayer2Info,
-            p3: testPlayer3Info,
-            p4: testPlayer4Info,
-        }
-
-
-        setAllPlayersInfo(info);
+        
 
     }, [gameInfo]);
 
@@ -79,7 +78,6 @@ export default function UnoBoard({ gameInfo }) {
 
         return ob;
     }
-
     const getSomeCards = (length) => {
         let cards = [];
         for (let i = 0; i < length; i++) {
@@ -92,7 +90,88 @@ export default function UnoBoard({ gameInfo }) {
 
 
 
-    const testGameState = {
+    
+
+
+    function getOpponentCards(numOfCards) {
+        
+        // Returns only the info needed for a basic hidden card
+        let getHiddenCard = () => {
+            return {
+                id: Math.random().toString(36).substr(2, 9), // Please dont collide
+                playable: false,
+                hidden: true
+            }
+        }
+        
+        // Get a hidden card component for each in their hand
+        let opponentCards = [];
+        for (let i = 0; i < numOfCards; i++) {
+            opponentCards.push(getHiddenCard());
+        }
+        return opponentCards;
+    }
+
+    return (
+        <>
+            <div className="relative w-full h-[1000px] bg-red-100">
+
+                <div className="absolute top-25 left-1/2 transform -translate-x-1/2">
+                    <div className="text-center">
+                        <h2 className="text-xl">{gameInfo.currentPlayers[0]}</h2>
+                    </div>
+                    <div>
+                        <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[0]])} direction="horizontal" />
+                    </div>
+
+                </div>
+
+                <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
+                    <h2 className="text-xl text-center">{gameInfo.currentPlayers[1]}</h2>
+                    <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[1]])} direction="vertical" />
+                </div>
+
+
+                <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
+                    <h2 className="text-xl text-center">{gameInfo.currentPlayers[2]}</h2>
+                    <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[2]])} direction="vertical" />
+                </div>
+
+
+                <div className="absolute bottom-25 left-1/2 transform -translate-x-1/2 mb-8">
+                    <h2 className="text-xl text-center">{gameInfo.currentPlayers[3]}</h2>
+                    <CardStack cards={getSomeCards(5)} direction="horizontal" />
+                </div>
+
+
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2">
+                    <h2 className="text-xl text-center">Discard Pile</h2>
+                    <CardStack cards={gameState?.discardPile || []} direction="horizontal" />
+                </div>
+
+            </div>
+
+
+
+            <div className="flex flex-col justify-center items-center min-h-screen">
+                <button
+                    className={`w-80 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-700`}
+                    onClick={() => leaveGame()}>
+                    Leave game
+                </button>
+            </div>
+        </>
+    );
+}
+
+
+
+
+
+
+/*
+
+const testGameState = {
         type: "game_state",
         currentPlayers: ["p1", "p2", "p3", "p4"],
         host: "p1",
@@ -145,68 +224,4 @@ export default function UnoBoard({ gameInfo }) {
         game_id: "a"
     }
 
-
-    function getOpponentCards(opponentName) {
-        
-        // Cant render a card if you got no info
-        if (!allPlayersInfo) return null;
-
-        // Returns only the info needed for a basic hidden card
-        let getHiddenCard = () => {
-            return {
-                id: Math.random().toString(36).substr(2, 9), // Please dont collide
-                playable: false,
-                hidden: true
-            }
-        }
-        // Get number of cards in their hand currently
-        let infoOnPlayer;
-        for (let key in allPlayersInfo) {
-            if (allPlayersInfo[key].player.name === opponentName) {
-                infoOnPlayer = allPlayersInfo[key].player;
-                break;
-            }
-        }
-        let numOfCards = infoOnPlayer.hand.length;
-
-        // Get a hidden card component for each in their hand
-        let opponentCards = [];
-        for (let i = 0; i < numOfCards; i++) {
-            opponentCards.push(getHiddenCard());
-        }
-        return opponentCards;
-    }
-
-    return (
-        <div className="relative w-full h-[1000px] bg-red-100">
-            
-            <div className="absolute top-25 left-1/2 transform -translate-x-1/2">\
-                <div className="text-center">
-                    <h2 className="text-xl">{gameInfo.currentPlayers[0]}</h2>
-                </div>
-                <div>
-                    <CardStack cards={getOpponentCards(gameInfo.currentPlayers[0])} direction="horizontal" />
-                </div>
-                
-            </div>
-
-            <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
-                <h2 className="text-xl text-center">{gameInfo.currentPlayers[1]}</h2>
-                <CardStack cards={getOpponentCards(gameInfo.currentPlayers[1])} direction="vertical" />
-            </div>
-
-
-            <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
-                <h2 className="text-xl text-center">{gameInfo.currentPlayers[2]}</h2>
-                <CardStack cards={getOpponentCards(gameInfo.currentPlayers[2])} direction="vertical" />
-            </div>
-
-
-            <div className="absolute bottom-25 left-1/2 transform -translate-x-1/2 mb-8">
-                <h2 className="text-xl text-center">{gameInfo.currentPlayers[3]}</h2>
-                <CardStack cards={getSomeCards(7)} direction="horizontal" />
-            </div>
-
-        </div>
-    );
-}
+*/

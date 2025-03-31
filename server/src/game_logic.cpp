@@ -160,6 +160,7 @@ json GameSession::to_json() {
         {"current_turn", current_turn},
         {"top_card", discard_pile.back()},
         {"hands", hands},
-        {"discard_pile", discard_pile}
+        {"discard_pile", discard_pile},
+        {"game_started", game_started}
     };
 }
