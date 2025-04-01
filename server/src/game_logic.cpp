@@ -66,8 +66,7 @@ void GameSession::add_player(std::string player_id) {
         // deal 7 cards to new player
         for (int i = 0; i < 7; i++) {
             if (!deck.empty()) {
-                hands[player_id].push_back(deck.back());
-                deck.pop_back();
+                draw_card(player_id);
             }
 
         }
@@ -92,6 +91,19 @@ bool GameSession::play_card(std::string player_id, std::string card) {
     // apply special card effects
     apply_card_effect(player_id, card);
     return true;
+}
+
+// draw a card from the deck
+std::string GameSession::draw_card(const std::string& player_id) {
+    
+    if (!deck.empty()) {
+        std::string drawn_card = deck.back();
+        deck.pop_back();
+        hands[player_id].push_back(drawn_card);
+        return drawn_card;
+    } else {
+        return "";
+    }
 }
 
 // applies the effect of special UNO cards
@@ -119,8 +131,7 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         std::cout << "Draw Two card played! Next player draws 2 cards." << std::endl;
         int next_player = (current_turn + 1) % players.size();
         for (int i = 0; i < 2; i++) {
-            hands[players[next_player]].push_back(deck.back());
-            deck.pop_back();
+            draw_card(players[next_player]);
         }
         current_turn = (current_turn + 2) % players.size();
     } 
@@ -129,8 +140,7 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         std::cout << "Wild Draw Four card played! Next player draws 4." << std::endl;
         int next_player = (current_turn + 1) % players.size();
         for (int i = 0; i < 4; i++) {
-            hands[players[next_player]].push_back(deck.back());
-            deck.pop_back();
+            draw_card(players[next_player]);
         }
         
         std::cout << "Waiting for " << player_id << " to choose a color..." << std::endl;

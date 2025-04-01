@@ -230,11 +230,154 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
         conn.send_text(response.dump());
     }
 
+    // handling getting game state
+    if (type == "get_game_state") {
+        std::string game_id = received["game_id"];
+        std::lock_guard<std::mutex> lock(game_mutex);
+        json response;
+        response["type"] = "game_state";
 
+        if (!game_sessions.count(game_id)) {
+            response["status"] = "not_found";
+        } else {
+            GameSession& session = game_sessions[game_id];
+            response["game_id"] = game_id;
+            response["currentPlayers"] = session.players;
+            response["host"] = session.host;
+            response["turnName"] = session.players[session.current_turn];
+             // response["playDirection"] = session.play_direction; ** Currently don't have a play_direction attribute, only add if we need it
+            response["remainingCards"] = session.deck.size();
+            response["discardPile"] = session.discard_pile; 
+        }
+        conn.send_text(response.dump());
+    }
 
+    else if (type == "get_player_info") {
+        std::string game_id = received["game_id"];
+        std::string player = received["player_name"];
+        std::lock_guard<std::mutex> lock(game_mutex);
+        json response;
+        response["type"] = "player_info";
+        response["game_id"] = game_id;
 
-    // Handle other types (e.g., play_card)
+        if (!game_sessions.count(game_id)) {
+            response["status"] = "not_found";
+        } else {
+            GameSession& session = game_sessions[game_id];
+            json player_data;
+            player_data["name"] = player;
+            player_data["numCards"] = session.hands[player].size();
+            player_data["hand"] = session.hands[player];
+            player_data["status"] = "active"; // optionally track this
+            response["player"] = player_data;
+        }
+        conn.send_text(response.dump());
+    }
 
+    else if (type == "play_card") {
+        std::string game_id = received["game_id"];
+        std::string player = received["player_name"];
+        std::string card = received["card"]; // assuming the card is a string
+
+        std::lock_guard<std::mutex> lock(game_mutex);
+        json response;
+        response["type"] = "card_played";
+        response["player_name"] = player;
+        response["card"] = card;
+
+        if (!game_sessions.count(game_id)) {
+            response["status"] = "not_found";
+        } else {
+            GameSession& session = game_sessions[game_id];
+            session.play_card(player, card);
+            json updated;
+            updated["type"] = "game_state";
+            updated["game_id"] = game_id;
+            updated["currentPlayers"] = session.players;
+            updated["host"] = session.host;
+            updated["turnName"] = session.players[session.current_turn];
+            // updated["playDirection"] = session.play_direction;
+            updated["remainingCards"] = session.deck.size();
+            updated["discardPile"] = session.discard_pile;
+            response["updated_game_state"] = updated;
+        }
+        conn.send_text(response.dump());
+    }
+
+    else if (type == "draw_card") {
+        std::string game_id = received["game_id"];
+        std::string player = received["player_name"];
+
+        std::lock_guard<std::mutex> lock(game_mutex);
+        json response;
+        response["type"] = "card_drawn";
+        response["player_name"] = player;
+
+        if (!game_sessions.count(game_id)) {
+            response["status"] = "not_found";
+        } else {
+            GameSession& session = game_sessions[game_id];
+            std::string drawn = session.draw_card(player);
+            response["card"] = drawn;
+
+            json updated;
+            updated["type"] = "game_state";
+            updated["game_id"] = game_id;
+            updated["currentPlayers"] = session.players;
+            updated["host"] = session.host;
+            updated["turnName"] = session.players[session.current_turn];
+            // updated["playDirection"] = session.play_direction;
+            updated["remainingCards"] = session.deck.size();
+            updated["discardPile"] = session.discard_pile;
+            response["updated_game_state"] = updated;
+        }
+        conn.send_text(response.dump());
+    }
+
+    else if (type == "player_disconnected") {
+        std::string game_id = received["game_id"];
+        std::string player = received["player_name"];
+
+        std::lock_guard<std::mutex> lock(game_mutex);
+        json response;
+        response["type"] = "player_disconnected";
+        response["player_name"] = player;
+
+        if (game_sessions.count(game_id)) {
+            GameSession& session = game_sessions[game_id];
+            
+            // remove from players and hands
+            session.players.erase(
+                std::remove(session.players.begin(), session.players.end(), player),
+                session.players.end()
+            );
+            session.hands.erase(player);
+
+            // Reassign host if necessary
+            if (session.host == player) {
+                session.host = session.players.empty() ? "" : session.players.front();
+            }
+
+            // Remove empty session
+            if (session.players.empty()) {
+                game_sessions.erase(game_id);
+            }
+
+            json updated;
+            updated["type"] = "game_state";
+            updated["game_id"] = game_id;
+            updated["currentPlayers"] = session.players;
+            updated["host"] = session.host;
+            updated["turnName"] = session.players[session.current_turn];
+            // updated["playDirection"] = session.play_direction;
+            updated["remainingCards"] = session.deck.size();
+            updated["discardPile"] = session.discard_pile;
+            response["updated_game_state"] = updated;
+        } else {
+            response["status"] = "not_found";
+        }
+        conn.send_text(response.dump());
+    }
 }
 
 void on_open(crow::websocket::connection& conn) {

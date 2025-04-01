@@ -54,6 +54,8 @@ public:
      */
     bool play_card(std::string player_id, std::string card);
 
+    std::string draw_card(const std::string& player_id);
+
     /**
      * @brief Applies special effects of action cards (Skip, Reverse, Draw Two, Wild, etc.).
      * @param player_id The player who played the special card.
