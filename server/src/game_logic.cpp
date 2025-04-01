@@ -11,9 +11,9 @@ GameSession::GameSession(std::string id) : game_id(id) {
 
 // initializes UNO deck and shuffles it
 void GameSession::initialize_deck() {
-    std::vector<std::string> colors = {"Red", "Blue", "Green", "Yellow"}; // 4 colours
-    std::vector<std::string> special_cards = {"Skip", "Reverse", "Draw Two"}; // special cards
-    std::vector<std::string> wild_cards = {"Wild", "Wild Draw Four"}; // wild cards
+    std::vector<std::string> colors = {"red", "blue", "green", "yellow"}; // 4 colours
+    std::vector<std::string> special_cards = {"skip", "reverse", "plus2"}; // special cards
+    std::vector<std::string> wild_cards = {"wild", "wild_plus4"}; // wild cards
 
     // Create the deck with all possible color-number combinations.
     for (const auto& color : colors) {
@@ -22,7 +22,7 @@ void GameSession::initialize_deck() {
 
         // add two of each number from 1 to 9 per colour
         for (int i = 1; i <= 9; i++) {
-            std::string card = color + " " + std::to_string(i);
+            std::string card = color + "_" + std::to_string(i);
             deck.push_back(card);
         }
         // add two of each action card per colour: Skip, Draw Two, Reverse  
@@ -35,8 +35,8 @@ void GameSession::initialize_deck() {
     
     // Add 4 Wild and 4 Wild Draw Four cards (no color)
     for (int i = 0; i < 4; i++) {
-        deck.push_back("Wild");
-        deck.push_back("Wild Draw Four");
+        deck.push_back("wild");
+        deck.push_back("wild_plus4");
     }
     
     // random number generator
@@ -97,12 +97,12 @@ bool GameSession::play_card(std::string player_id, std::string card) {
 // applies the effect of special UNO cards
 void GameSession::apply_card_effect(std::string player_id, std::string card) {
     // Skip card
-    if (card.find("Skip") != std::string::npos) {
+    if (card.find("skip") != std::string::npos) {
         std::cout << "Skip card played! Next player loses turn." << std::endl;
         current_turn = (current_turn + 2) % players.size();
     } 
     // Reverse card
-    else if (card.find("Reverse") != std::string::npos) {
+    else if (card.find("reverse") != std::string::npos) {
         std::cout << "Reverse card played! Turn order reversed." << std::endl;
         std::reverse(players.begin(), players.end());
 
@@ -115,7 +115,7 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         }
     } 
     // Draw two
-    else if (card.find("Draw Two") != std::string::npos) {
+    else if (card.find("plus2") != std::string::npos) {
         std::cout << "Draw Two card played! Next player draws 2 cards." << std::endl;
         int next_player = (current_turn + 1) % players.size();
         for (int i = 0; i < 2; i++) {
@@ -125,7 +125,7 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         current_turn = (current_turn + 2) % players.size();
     } 
     // Wild Draw Four
-    else if (card.find("Wild Draw Four") != std::string::npos) {
+    else if (card.find("wild_plus4") != std::string::npos) {
         std::cout << "Wild Draw Four card played! Next player draws 4." << std::endl;
         int next_player = (current_turn + 1) % players.size();
         for (int i = 0; i < 4; i++) {
@@ -139,7 +139,7 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         current_turn = (current_turn + 2) % players.size();
     } 
     // Wild Card
-    else if (card.find("Wild") != std::string::npos) {
+    else if (card.find("wild") != std::string::npos) {
         std::cout << "Wild card played! Waiting for " << player_id << " to choose a color..." << std::endl;
         
         // Ask the player to select a color
