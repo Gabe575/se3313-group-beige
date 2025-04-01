@@ -18,7 +18,7 @@ void GameSession::initialize_deck() {
     // Create the deck with all possible color-number combinations.
     for (const auto& color : colors) {
         // add one 0 card per colour
-        deck.push_back(color  + " 0");
+        deck.push_back(color  + "_0");
 
         // add two of each number from 1 to 9 per colour
         for (int i = 1; i <= 9; i++) {
@@ -27,7 +27,7 @@ void GameSession::initialize_deck() {
         }
         // add two of each action card per colour: Skip, Draw Two, Reverse  
         for (const auto& special : special_cards) {
-            std::string card = color + " " + special;
+            std::string card = color + "_" + special;
             deck.push_back(card);
             deck.push_back(card);
         }

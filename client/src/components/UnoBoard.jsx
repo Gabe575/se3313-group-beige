@@ -4,12 +4,10 @@ import { useParams } from "react-router-dom";
 
 import CardStack from "./CardStack";
 
-export default function UnoBoard({ gameInfo }) {
+export default function UnoBoard({ gameInfo, myCards }) {
 
     const { gameId } = useParams();
     const [gameState, setGameState] = useState(null);
-    const [allPlayersInfo, setAllPlayersInfo] = useState(null);
-
     
 
     let navigate = useNavigate();
@@ -46,8 +44,7 @@ export default function UnoBoard({ gameInfo }) {
 
     }, [gameInfo]);
 
-
-
+    // These are for testing
     function getRandomCard() {
 
         const colours = ['red', 'blue', 'green', 'yellow'];
@@ -112,6 +109,73 @@ export default function UnoBoard({ gameInfo }) {
         return opponentCards;
     }
 
+    // Returns a card object corresponding to the data passed into it
+    const getCard = (cardData) => {
+
+        let cardId = Math.random().toString(36).substr(2, 9);
+
+        // Either colour_digit, colour_action, 
+        if (cardData.colour) {
+            if (cardData.digit) {
+                return {
+                    colour: cardData.colour,
+                    digit: cardData.digit,
+                    id: cardId,
+                    playable: true,
+                    disableShadow: false,
+                    hidden: false,
+                }
+            } else {
+                return {
+                    colour: cardData.colour,
+                    action: cardData.action,
+                    id: cardId,
+                    playable: true,
+                    disableShadow: false,
+                    hidden: false,
+                }
+            }
+        } else {
+            // Either wild or wild_plus4, both under action, so just set action
+            return {
+                action: cardData.action,
+                id: cardId,
+                playable: true,
+                disableShadow: false,
+                hidden: false,
+            }
+        }
+    }
+
+    // For the players cards - not hidden map list of card names to list of card objects
+    function cardNameArrayToObjectArray(cardArray) {
+
+        if (cardArray == null) return null;
+
+        let cards = [];
+
+        cardArray.forEach(card => {
+
+            if (card == "wild") return cards.push(getCard({ action: 'wild' }));
+            else if (card == "wild_plus4") return cards.push(getCard({ action: 'wild_plus4' }));
+            
+            let digit, action;
+            let colour = card.split('_')[0];
+            let suffix = card.split('_')[1];
+
+            // If the second part is a number, set the digit
+            if (/^[0-9]$/.test(suffix)) digit = suffix;
+            else action = suffix;
+
+            if (digit) return cards.push(getCard({ colour: colour, digit: digit }));
+            else return cards.push(getCard({ colour: colour, action: action }));
+
+        });
+
+        return cards;
+
+    }
+        
     return (
         <>
             <div className="relative w-full h-[1000px] bg-red-100">
@@ -140,13 +204,13 @@ export default function UnoBoard({ gameInfo }) {
 
                 <div className="absolute bottom-25 left-1/2 transform -translate-x-1/2 mb-8">
                     <h2 className="text-xl text-center">{gameInfo.currentPlayers[3]}</h2>
-                    <CardStack cards={getSomeCards(5)} direction="horizontal" />
+                    <CardStack cards={cardNameArrayToObjectArray(myCards)} direction="horizontal" />
                 </div>
 
 
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2">
-                    <h2 className="text-xl text-center">Discard Pile</h2>
-                    <CardStack cards={gameState?.discardPile || []} direction="horizontal" />
+                    
+                    <CardStack cards={cardNameArrayToObjectArray(gameInfo.discard_pile) || null} direction="horizontal" />
                 </div>
 
             </div>

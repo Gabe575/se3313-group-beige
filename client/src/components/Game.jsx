@@ -12,6 +12,8 @@ export default function Game() {
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
 
+    const [myHand, setMyHand] = useState(null);
+
     const socket = useSocket();
     let navigate = useNavigate();
 
@@ -23,12 +25,20 @@ export default function Game() {
         }
     }
 
+    const sendGetMyCardsInfo = () => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+                JSON.stringify({ type: "get_player_hand", game_id: gameId, player_name: sessionStorage.getItem('name') })
+            );
+        }
+    }
+
     // Listen for messages from the socket
     useEffect(() => {
         if (socket) {
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                console.log('Received message:', event.data);
+                //console.log('Received message:', event.data);
 
                 if (data.type === "game_info") {
 
@@ -55,6 +65,22 @@ export default function Game() {
                         navigate(`/lobby/${data.game_id}`);
                     }
                 }
+
+                if (data.type === "player_hand") {
+
+                    // If its not for this game drop the message
+                    if (data.game_id !== gameId) return;
+
+                    // If its not for this player drop the message
+                    if (data.player_name !== sessionStorage.getItem('name')) return;
+
+                    // Drop not ok messages
+                    if (data.status !== "ok") return;
+
+                    setMyHand(data.hand);
+
+                }
+
             };
         }
         return () => {
@@ -68,10 +94,12 @@ export default function Game() {
     useEffect(() => {
         if (socket && socket.readyState === WebSocket.OPEN) {
             sendGetInfo();
+            sendGetMyCardsInfo();
         } else {
             const checkSocketInterval = setInterval(() => {
                 if (socket && socket.readyState === WebSocket.OPEN) {
                     sendGetInfo();
+                    sendGetMyCardsInfo();
                     clearInterval(checkSocketInterval);
                 }
             }, 500);
@@ -80,10 +108,11 @@ export default function Game() {
         }
     }, [socket, gameId]);
 
-    // Poll for gamestate
+    // Poll for gamestate and this players cards
     useEffect(() => {
         const pollInterval = setInterval(() => {
             sendGetInfo();
+            sendGetMyCardsInfo();
         }, 3000);
 
         return () => clearInterval(pollInterval);
@@ -124,7 +153,7 @@ export default function Game() {
                             </button>
                         </div>
                     ) : (
-                        <UnoBoard gameInfo={gameInfo} />
+                        <UnoBoard gameInfo={gameInfo} myCards={myHand} />
                     )}
                 </div>
             ) : null}
