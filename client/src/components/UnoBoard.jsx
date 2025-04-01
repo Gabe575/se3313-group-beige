@@ -207,7 +207,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                             <h2 className="text-xl">{gameInfo.currentPlayers[0]}</h2>
                         </div>
                         <div>
-                            <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[0]])} direction="horizontal" />
+                            <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[0]])} direction="horizontal" />
                         </div>
                     </div>
                 )}
@@ -216,7 +216,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                 {playerOrder[1] && (
                     <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
                         <h2 className="text-xl text-center">{gameInfo.currentPlayers[1]}</h2>
-                        <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[1]])} direction="vertical" />
+                        <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[1]])} direction="vertical" />
                     </div>
                 )}
 
@@ -224,7 +224,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                 {playerOrder[2] && (
                     <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
                         <h2 className="text-xl text-center">{gameInfo.currentPlayers[2]}</h2>
-                        <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[2]])} direction="vertical" />
+                        <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[2]])} direction="vertical" />
                     </div>
                 )}
 
