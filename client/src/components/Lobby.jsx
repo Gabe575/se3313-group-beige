@@ -174,7 +174,7 @@ export default function Lobby() {
                     </>
                 ) : null}
 
-                {gameInfo?.currentPlayers?.length == 4 && gameInfo?.host == sessionStorage.getItem('name') ? (
+                {gameInfo?.currentPlayers?.length > 1 && gameInfo?.host == sessionStorage.getItem('name') ? (
                     <button
                         className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex justify-center items-center"
                         onClick={startGame}>

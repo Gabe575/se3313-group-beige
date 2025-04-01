@@ -85,7 +85,7 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
         if (!game_sessions.count(id)) {
             response["status"] = "not_found";
         } else if (std::find(game_sessions[id].players.begin(), game_sessions[id].players.end(), player) == game_sessions[id].players.end()) {
-            if (game_sessions[id].players.size() >= 4) {
+            if (game_sessions[id].players.size() >= 4 || game_sessions[id].game_started) {
                 response["status"] = "full";
             } else {
                 game_sessions[id].add_player(player);
@@ -145,7 +145,7 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
 
         std::lock_guard<std::mutex> lock(game_mutex);
         for (const auto& [id, session] : game_sessions) {
-            if (session.players.size() < 4) games.push_back({"id", id});
+            if (session.players.size() < 4 && !session.game_started) games.push_back({"id", id});
         }
         response["games"] = games;
         conn.send_text(response.dump());

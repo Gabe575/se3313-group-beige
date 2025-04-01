@@ -8,7 +8,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
     const { gameId } = useParams();
     const [gameState, setGameState] = useState(null);
-    
+    const [playerOrder, setPlayerOrder] = useState([]);
 
     let navigate = useNavigate();
 
@@ -26,14 +26,35 @@ export default function UnoBoard({ gameInfo, myCards }) {
     // Validates the gameInfo and checks the player is allowed to be in this game
     useEffect(() => {
 
-        // If invalid gameInfo, send them back to the lobby
-        if (gameInfo.currentPlayers.length != 4) navigate(`/lobby/${gameId}`);
-
+        const playerName = sessionStorage.getItem('name');
 
         // Kick them if their name isnt in the list of players
-        if (!gameInfo.currentPlayers.includes(sessionStorage.getItem('name'))) {
+        if (!gameInfo.currentPlayers.includes(playerName)) {
             console.log('player not allowed in lobby!');
         }
+
+        const playerIndex = gameInfo.currentPlayers.indexOf(playerName);
+
+        // Logic to render players in the proper order in all scenarios
+        if (gameInfo.currentPlayers.length == 2) {
+            if (playerIndex === 0) setPlayerOrder([gameInfo.currentPlayers[1], null, null, gameInfo.currentPlayers[0]]);
+            else setPlayerOrder([gameInfo.currentPlayers[0], null, null, gameInfo.currentPlayers[1]]);
+        }
+        else if (gameInfo.currentPlayers.length == 3) {
+          if (playerIndex === 0) setPlayerOrder([null, gameInfo.currentPlayers[1], gameInfo.currentPlayers[2], gameInfo.currentPlayers[0]]);
+          else if (playerIndex === 1) setPlayerOrder([null, gameInfo.currentPlayers[2], gameInfo.currentPlayers[0], gameInfo.currentPlayers[1]]);
+          else setPlayerOrder([null, gameInfo.currentPlayers[0], gameInfo.currentPlayers[1], gameInfo.currentPlayers[2]]);
+
+        }
+        else if (gameInfo.currentPlayers.length == 4) {
+          if (playerIndex === 0) setPlayerOrder([gameInfo.currentPlayers[2], gameInfo.currentPlayers[1], gameInfo.currentPlayers[3], gameInfo.currentPlayers[0]]);
+          else if (playerIndex === 1) setPlayerOrder([gameInfo.currentPlayers[3], gameInfo.currentPlayers[2], gameInfo.currentPlayers[0], gameInfo.currentPlayers[1]]);
+          else if (playerIndex === 2) setPlayerOrder([gameInfo.currentPlayers[1], gameInfo.currentPlayers[0], gameInfo.currentPlayers[2], gameInfo.currentPlayers[3]]);
+          else setPlayerOrder([gameInfo.currentPlayers[1], gameInfo.currentPlayers[0], gameInfo.currentPlayers[2], gameInfo.currentPlayers[3]]);
+        }
+        // If invalid gameInfo, send them back to the lobby
+        else navigate(`/lobby/${gameId}`);
+
 
         // Just in case the url lobby name doesnt match the recieved id from the server
         if (gameId != gameInfo.game_id) console.log('Error occured with mismatch between the expected game id and actual game id');
@@ -179,35 +200,43 @@ export default function UnoBoard({ gameInfo, myCards }) {
     return (
         <>
             <div className="relative w-full h-[1000px] bg-red-100">
-
-                <div className="absolute top-25 left-1/2 transform -translate-x-1/2">
-                    <div className="text-center">
-                        <h2 className="text-xl">{gameInfo.currentPlayers[0]}</h2>
+                {/* Player 1 */}
+                {playerOrder[0] && (
+                    <div className="absolute top-25 left-1/2 transform -translate-x-1/2">
+                        <div className="text-center">
+                            <h2 className="text-xl">{gameInfo.currentPlayers[0]}</h2>
+                        </div>
+                        <div>
+                            <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[0]])} direction="horizontal" />
+                        </div>
                     </div>
-                    <div>
-                        <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[0]])} direction="horizontal" />
+                )}
+
+                {/* Player 2 */}
+                {playerOrder[1] && (
+                    <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
+                        <h2 className="text-xl text-center">{gameInfo.currentPlayers[1]}</h2>
+                        <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[1]])} direction="vertical" />
                     </div>
+                )}
 
-                </div>
+                {/* Player 3 */}
+                {playerOrder[2] && (
+                    <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
+                        <h2 className="text-xl text-center">{gameInfo.currentPlayers[2]}</h2>
+                        <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[2]])} direction="vertical" />
+                    </div>
+                )}
 
-                <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
-                    <h2 className="text-xl text-center">{gameInfo.currentPlayers[1]}</h2>
-                    <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[1]])} direction="vertical" />
-                </div>
+                {/* Player 4 (Self) */}
+                {playerOrder[3] && (
+                    <div className="absolute bottom-25 left-1/2 transform -translate-x-1/2 mb-8">
+                        <h2 className="text-xl text-center">{gameInfo.currentPlayers[3]}</h2>
+                        <CardStack cards={cardNameArrayToObjectArray(myCards)} direction="horizontal" />
+                    </div>
+                )}
 
-
-                <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
-                    <h2 className="text-xl text-center">{gameInfo.currentPlayers[2]}</h2>
-                    <CardStack cards={getOpponentCards(gameInfo.player_hands[gameInfo.currentPlayers[2]])} direction="vertical" />
-                </div>
-
-
-                <div className="absolute bottom-25 left-1/2 transform -translate-x-1/2 mb-8">
-                    <h2 className="text-xl text-center">{gameInfo.currentPlayers[3]}</h2>
-                    <CardStack cards={cardNameArrayToObjectArray(myCards)} direction="horizontal" />
-                </div>
-
-
+                {/* Discard Pile */}
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2">
                     
                     <CardStack cards={cardNameArrayToObjectArray(gameInfo.discard_pile) || null} direction="horizontal" />
