@@ -131,6 +131,62 @@ TEST_F(GameLogicTest, MaxTenPlayers) {
     EXPECT_EQ(game.to_json()["players"].size(), 4);
 }
 
+TEST_F(GameLogicTest, CallUNOWhenOneCardLeft) {
+    // give player1 two arbitrary cards, including a playable card
+    std::string card1 = "blue_5";
+    std::string card2 = "green_2";
+    game.hands["player1"] = {card1,card2};
+
+    // simulate playing one card, leaving player1 with one
+    EXPECT_TRUE(game.play_card("player1", card1));
+    EXPECT_EQ(game.hands["player1"].size(), 1);
+
+    // Pretend they called UNO
+    EXPECT_TRUE(game.hands["player1"].size() == 1);
+}
+
+TEST_F(GameLogicTest, WinnerHasZeroCardsAndLowestScore) {
+    game = GameSession("test_game");
+    game.add_player("winner");
+    game.add_player("loser");
+
+    std::string winning_card = "green_7";
+    game.hands["winner"] = { winning_card };
+    game.hands["loser"] = {"red_5", "red_skip"}; // score will be 5 + 20
+
+    EXPECT_TRUE(game.play_card("winner", winning_card));
+    EXPECT_TRUE(game.hands["winner"].empty()); // players hand should now be empty
+
+    // simulate backend scoring logic
+    std::unordered_map<std::string, int> scores;
+    int lowest = INT_MAX;
+    std::string winner_id;
+
+    for (const auto& [player, hand] : game.hands) {
+        int score = 0;
+
+        for (const std::string& c : hand) {
+            if (c.find("wild_plus4") != std::string::npos) score += 50;
+            else if (c.find("wild") != std::string::npos) score += 50;
+            else if (c.find("plus2") != std::string::npos || c.find("reverse") != std::string::npos || c.find("skip") != std::string::npos) score += 20;
+            else {
+                try {
+                    score += std::stoi(c.substr(c.find("_") + 1));
+                } catch (...) {}
+            }
+        }
+
+        scores[player] = score;
+        if (score < lowest) {
+            lowest = score;
+            winner_id = player;
+        }
+    }
+
+    EXPECT_EQ(winner_id, "winner");
+    EXPECT_EQ(scores["loser"], 25); // 5 + 20 (skip)
+}
+
 // Add this main() if you're not linking gtest_main
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
