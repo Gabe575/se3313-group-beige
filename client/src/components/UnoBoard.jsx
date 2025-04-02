@@ -238,6 +238,11 @@ export default function UnoBoard({ gameInfo, myCards }) {
                     <CardStack cards={getDiscardPileTop(gameInfo.discard_pile) || null} direction="horizontal" />
                 </div>
 
+                {/* Turn display */}
+                <div className="absolute top-2/3 left-1/2 transform -translate-x-1/2">
+                    <h2 className="text-xl">Turn: {gameInfo.currentPlayers[gameInfo.turn_index]}</h2>
+                </div>
+
             </div>
 
 
