@@ -1,14 +1,28 @@
 // Creates a card that shows the corresponding card image to the properties etc
 
-export default function Card({ action, colour, digit, disableShadow = false, id, playable, className, hidden }) {
+import { useSocket } from "./WebSocketProvider";
 
-    // TODO: check
+export default function Card({ action, colour, digit, disableShadow = false, id, playable, className, hidden, name, game }) {
+    
+    const socket = useSocket();
+
     const onClick = () => {
         if (playable) {
-            console.log(`Card played: ${id}`);
+            console.log(`Card played: ${name}`);
+            
+            const message = {
+                type: "play_card",
+                game_id: game,
+                player_name: sessionStorage.getItem('name'),
+                card: name
+            }
 
-            // TODO: send card played message
-
+            // Send card played message request
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(
+                    JSON.stringify(message)
+                );
+            }
         }
     };
 
@@ -17,7 +31,7 @@ export default function Card({ action, colour, digit, disableShadow = false, id,
 
         if (action) {
             if (action == "wild") imagePath = `/assets/images/wild.png`;
-            else if (action == "plus4") imagePath = `/assets/images/wild_plus4.png`;
+            else if (action == "wild_plus4") imagePath = `/assets/images/wild_plus4.png`;
             else imagePath = `/assets/images/${colour}_${action}.png`;
         } else if (digit !== undefined) {
             // Regular number cards (0-9)

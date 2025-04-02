@@ -75,17 +75,35 @@ void GameSession::add_player(std::string player_id) {
 
 // handles playing a card. Returns true if successful, false if invalid
 bool GameSession::play_card(std::string player_id, std::string card) {
-    // check if player's turn
+    // Check if it's the player's turn
     if (player_id != players[current_turn]) return false;
+    
+    // Check if the player has the card in their hand
+    auto& hand = hands[player_id];
+    auto it = std::find(hand.begin(), hand.end(), card);
+    if (it == hand.end()) return false;
+    
+    // Extract the top card from the discard pile
+    if (discard_pile.empty()) return false;
+    std::string top_card = discard_pile.back();
 
-    // check if player has the card in their hand 
-    if (std::find(hands[player_id].begin(), hands[player_id].end(), card) == hands[player_id].end()) return false;
+    // Extract color and value from cards (assuming format "Red_5", "Blue_Draw2", etc.)
+    std::string played_color = card.substr(0, card.find('_'));
+    std::string played_value = card.substr(card.find('_') + 1);
+    std::string top_color = top_card.substr(0, top_card.find('_'));
+    std::string top_value = top_card.substr(top_card.find('_') + 1);
+
+    // Check if the card is playable (matching color, value, or wild)
+    if (!(played_color == "wild" || played_color == "wild_plus4" || played_color == top_color || played_value == top_value)) {
+        return false;
+    }
+    
 
     // announce the move
     std::cout << player_id << " played " << card << std::endl;
 
     // remove played card from player's hand and add to discard pile
-    hands[player_id].erase(std::remove(hands[player_id].begin(), hands[player_id].end(), card), hands[player_id].end());
+    hand.erase(it);
     discard_pile.push_back(card);
        
     // apply special card effects

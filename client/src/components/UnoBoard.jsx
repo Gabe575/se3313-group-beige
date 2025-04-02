@@ -145,6 +145,8 @@ export default function UnoBoard({ gameInfo, myCards }) {
                     playable: true,
                     disableShadow: false,
                     hidden: false,
+                    name: cardData.name,
+                    game: cardData.game
                 }
             } else {
                 return {
@@ -154,6 +156,8 @@ export default function UnoBoard({ gameInfo, myCards }) {
                     playable: true,
                     disableShadow: false,
                     hidden: false,
+                    name: cardData.name,
+                    game: cardData.game
                 }
             }
         } else {
@@ -164,6 +168,8 @@ export default function UnoBoard({ gameInfo, myCards }) {
                 playable: true,
                 disableShadow: false,
                 hidden: false,
+                name: cardData.name,
+                game: cardData.game
             }
         }
     }
@@ -177,8 +183,8 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
         cardArray.forEach(card => {
 
-            if (card == "wild") return cards.push(getCard({ action: 'wild' }));
-            else if (card == "wild_plus4") return cards.push(getCard({ action: 'wild_plus4' }));
+            if (card == "wild") return cards.push(getCard({ action: 'wild', name: card, game: gameId }));
+            else if (card == "wild_plus4") return cards.push(getCard({ action: 'wild_plus4', name: card, game: gameId }));
             
             let digit, action;
             let colour = card.split('_')[0];
@@ -188,8 +194,8 @@ export default function UnoBoard({ gameInfo, myCards }) {
             if (/^[0-9]$/.test(suffix)) digit = suffix;
             else action = suffix;
 
-            if (digit) return cards.push(getCard({ colour: colour, digit: digit }));
-            else return cards.push(getCard({ colour: colour, action: action }));
+            if (digit) return cards.push(getCard({ colour: colour, digit: digit, name: card, game: gameId }));
+            else return cards.push(getCard({ colour: colour, action: action, name: card, game: gameId }));
 
         });
 
@@ -256,65 +262,3 @@ export default function UnoBoard({ gameInfo, myCards }) {
         </>
     );
 }
-
-
-
-
-
-
-/*
-
-const testGameState = {
-        type: "game_state",
-        currentPlayers: ["p1", "p2", "p3", "p4"],
-        host: "p1",
-        game_id: "a",
-        turnName: "p1",
-        playDirection: "forward",
-        remainingCards: 15,
-        discardPile: getSomeCards(1)
-    }
-
-    const testPlayerInfo = {
-        type: "player_info",
-        player: {
-            name: "p1",
-            numCards: 5,
-            hand: getSomeCards(1),
-            status: "active"
-        },
-        game_id: "a"
-    }
-
-    const testPlayer2Info = {
-        type: "player_info",
-        player: {
-            name: "p2",
-            numCards: 5,
-            hand: getSomeCards(10),
-            status: "active"
-        },
-        game_id: "a"
-    }
-    const testPlayer3Info = {
-        type: "player_info",
-        player: {
-            name: "p3",
-            numCards: 5,
-            hand: getSomeCards(5),
-            status: "active"
-        },
-        game_id: "a"
-    }
-    const testPlayer4Info = {
-        type: "player_info",
-        player: {
-            name: "p4",
-            numCards: 5,
-            hand: getSomeCards(7),
-            status: "active"
-        },
-        game_id: "a"
-    }
-
-*/
