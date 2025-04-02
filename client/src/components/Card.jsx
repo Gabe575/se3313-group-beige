@@ -31,7 +31,7 @@ export default function Card({ action, colour, digit, disableShadow = false, id,
 
         if (action) {
             if (action == "wild") imagePath = `/assets/images/wild.png`;
-            else if (action == "plus4") imagePath = `/assets/images/wild_plus4.png`;
+            else if (action == "wild_plus4") imagePath = `/assets/images/wild_plus4.png`;
             else imagePath = `/assets/images/${colour}_${action}.png`;
         } else if (digit !== undefined) {
             // Regular number cards (0-9)
