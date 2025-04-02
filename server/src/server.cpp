@@ -343,7 +343,7 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
         std::string player = received["player_name"];
         std::string card_color = received["card"]["color"];
         std::string card_value = received["card"]["value"];
-        std::string card = received["card"]
+        std::string card = received["card"];
 
         std::lock_guard<std::mutex> lock(game_mutex);
         json response;
@@ -455,7 +455,7 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
                 final_scores[player] = score;
                 if (score < lowest) {
                     lowest = score;
-                    winner = player
+                    winner = player;
                 }
             }
 
