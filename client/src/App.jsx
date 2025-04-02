@@ -6,6 +6,7 @@ import Lobby from './components/Lobby';
 import NotFound from './components/NotFound';
 import { WebSocketProvider } from './components/WebSocketProvider';
 import Game from "./components/Game";
+import WebSocketTester from "./components/WebSocketTester";
 
 export default function App() {
     return (
@@ -18,7 +19,7 @@ export default function App() {
                     <Route path='/game/:gameId' element={<Game />} />
                     <Route path='/lobby/:gameId' element={<Lobby />} />
                     
-
+                    <Route path='/tester' element={<WebSocketTester />} />
                     
                     <Route path='/*' element={<NotFound />} />
                 </Routes>
