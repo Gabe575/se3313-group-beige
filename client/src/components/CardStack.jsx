@@ -38,7 +38,7 @@ const CardStack = ({ cards, direction = "vertical" }) => {
                 transform: direction === "horizontal" ? `translateX(-${offset}px)` : `translateY(-${offset}px)`,
             }}
         >
-            {cards.map((card, index) => {
+            {Array.isArray(cards) ? cards.map((card, index) => {
                 return (
                     <div
                         key={card.id}
@@ -52,7 +52,7 @@ const CardStack = ({ cards, direction = "vertical" }) => {
                         <Card {...card} />
                     </div>
                 );
-            })}
+            }) : null}
         </div>
     );
 };

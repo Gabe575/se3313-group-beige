@@ -202,6 +202,40 @@ export default function UnoBoard({ gameInfo, myCards }) {
         return cards;
 
     }
+
+    function getDiscardPileTop(cardArray) {
+
+        if (cardArray == null) return null;
+
+        let topCard = cardArray[cardArray.length - 1];
+
+        let cards = [];
+
+        if (topCard == "wild") cards.push(getCard({ action: 'wild', name: topCard, game: gameId }));
+        else if (topCard == "wild_plus4") cards.push(getCard({ action: 'wild_plus4', name: topCard, game: gameId }));
+        
+        // Only check for digit / action cards if its not a wild card or wild_plus4
+        if (cards.length == 0) {
+
+            let digit, action;
+            let colour = topCard.split('_')[0];
+            let suffix = topCard.split('_')[1];
+
+            // If the second part is a number, set the digit
+            if (/^[0-9]$/.test(suffix)) digit = suffix;
+            else action = suffix;
+
+            if (digit) return cards.push(getCard({ colour: colour, digit: digit, name: topCard, game: gameId }));
+            else return cards.push(getCard({ colour: colour, action: action, name: topCard, game: gameId }));
+        }
+
+        // Just in case theres more than 1 card somehow, force it into 1 card in an array
+        if (cards.length > 1) return [cards[0]];
+
+        return cards;
+
+    }
+
         
     return (
         <>
@@ -245,7 +279,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                 {/* Discard Pile */}
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2">
                     
-                    <CardStack cards={cardNameArrayToObjectArray(gameInfo.discard_pile) || null} direction="horizontal" />
+                    <CardStack cards={getDiscardPileTop(gameInfo.discard_pile) || null} direction="horizontal" />
                 </div>
 
             </div>
