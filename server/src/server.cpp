@@ -911,13 +911,6 @@ void on_close(crow::websocket::connection& conn, const std::string& reason, uint
                 // Erase game session
                 it = game_sessions.erase(it);
 
-                // Clean up game thread (if any)
-                if (game_threads.count(to_erase)) {
-                    if (game_threads[to_erase].joinable()) {
-                        game_threads[to_erase].join(); // Join to ensure thread has completed
-                    }
-                    game_threads.erase(to_erase); // Remove thread from map
-                }
                 
                 continue; // Skip to next session
             }
@@ -936,6 +929,7 @@ void game_thread_loop(const std::string& game_id) {
             if (!game_thread_running[game_id]) break;
         }
 
+        // Wait for new messages or shutdown signal
         std::unique_lock<std::mutex> lock(game_queue_mutexes[game_id]);
         game_queue_cvs[game_id].wait(lock, [&] {
             std::lock_guard<std::mutex> check(thread_control_mutex);
@@ -949,147 +943,129 @@ void game_thread_loop(const std::string& game_id) {
 
         if (incoming_game_queues[game_id].empty()) continue;
 
-        json msg = incoming_game_queues[game_id].front();
-        incoming_game_queues[game_id].pop();
-        lock.unlock();
+        json msg;
+        try {
+            msg = incoming_game_queues[game_id].front();
+            incoming_game_queues[game_id].pop();
+            lock.unlock();  // unlock the queue for next thread ops
 
-        std::string type = msg["type"];
-        std::string player = msg.value("player_name", "");
-        auto& session = game_sessions[game_id];
+            std::string type = msg.at("type");
+            std::string player = msg.value("player_name", "");
 
-        crow::websocket::connection* conn = reinterpret_cast<crow::websocket::connection*>(msg["connection_ptr"].get<uintptr_t>());
-        json response;
+            auto& session = game_sessions[game_id];
+            crow::websocket::connection* conn =
+                reinterpret_cast<crow::websocket::connection*>(msg.at("connection_ptr").get<uintptr_t>());
 
-        if (type == "play_card") {
-            std::string card = msg["card"];
-            response["type"] = "card_played";
-            response["player_name"] = player;
-            response["card"] = card;
+            json response;
 
-            if (!session.hands.count(player)) {
-                response["status"] = "not_found";
-            } else if (!session.play_card(player, card)) {
-                response["status"] = "invalid";
-            } else {
+            // Handle message types
+            if (type == "play_card") {
+                std::string card = msg["card"];
+                response["type"] = "card_played";
+                response["player_name"] = player;
+                response["card"] = card;
+
+                if (!session.hands.count(player)) {
+                    response["status"] = "not_found";
+                } else if (!session.play_card(player, card)) {
+                    response["status"] = "invalid";
+                } else {
+                    response["status"] = "ok";
+                    json updated = session.to_json();
+                    response["updated_game_state"] = updated;
+                }
+
+            } else if (type == "draw_card") {
+                response["type"] = "card_drawn";
+                response["player_name"] = player;
+
+                if (!session.hands.count(player)) {
+                    response["status"] = "not_found";
+                } else {
+                    std::string drawn = session.draw_card(player);
+                    response["card"] = drawn;
+                    response["status"] = "ok";
+                    response["updated_game_state"] = session.to_json();
+                }
+
+            } else if (type == "get_game_state") {
+                response["type"] = "game_state";
+                response["game_id"] = game_id;
+                response = session.to_json();
                 response["status"] = "ok";
-                json updated;
-                updated["type"] = "game_state";
-                updated["game_id"] = game_id;
-                updated["currentPlayers"] = session.players;
-                updated["host"] = session.host;
-                updated["turnName"] = session.players[session.current_turn];
-                updated["remainingCards"] = session.deck.size();
-                updated["discardPile"] = session.discard_pile;
-                response["updated_game_state"] = updated;
+
+            } else if (type == "get_player_hand") {
+                response["type"] = "player_hand";
+                response["game_id"] = game_id;
+                response["player_name"] = player;
+
+                if (!session.hands.count(player)) {
+                    response["status"] = "no_hand";
+                } else {
+                    response["status"] = "ok";
+                    response["hand"] = session.hands[player];
+                }
+
+            } else if (type == "get_player_info") {
+                response["type"] = "player_info";
+                response["game_id"] = game_id;
+
+                if (!session.hands.count(player)) {
+                    response["status"] = "not_found";
+                } else {
+                    json player_data;
+                    player_data["name"] = player;
+                    player_data["numCards"] = session.hands[player].size();
+                    player_data["hand"] = session.hands[player];
+                    player_data["status"] = "active";
+                    response["player"] = player_data;
+                    response["status"] = "ok";
+                }
+
+            } else if (type == "player_disconnected") {
+                response["type"] = "player_disconnected";
+                response["game_id"] = game_id;
+                response["player_name"] = player;
+
+                session.players.erase(
+                    std::remove(session.players.begin(), session.players.end(), player),
+                    session.players.end()
+                );
+                session.hands.erase(player);
+
+                if (session.host == player) {
+                    session.host = session.players.empty() ? "" : session.players.front();
+                }
+
+                if (session.players.empty()) {
+                    std::lock_guard<std::mutex> lock(game_mutex);
+                    game_sessions.erase(game_id);  // Clean up
+                    break; // End thread
+                } else {
+                    response["updated_game_state"] = session.to_json();
+                }
             }
 
-        } else if (type == "draw_card") {
-            response["type"] = "card_drawn";
-            response["player_name"] = player;
-
-            if (!session.hands.count(player)) {
-                response["status"] = "not_found";
-            } else {
-                std::string drawn = session.draw_card(player);
-                response["card"] = drawn;
-                response["status"] = "ok";
-
-                json updated;
-                updated["type"] = "game_state";
-                updated["game_id"] = game_id;
-                updated["currentPlayers"] = session.players;
-                updated["host"] = session.host;
-                updated["turnName"] = session.players[session.current_turn];
-                updated["remainingCards"] = session.deck.size();
-                updated["discardPile"] = session.discard_pile;
-                response["updated_game_state"] = updated;
+            // Enqueue the response for the main thread to send
+            {
+                std::lock_guard<std::mutex> lock(message_queue_mutex);
+                message_queues[conn].push(response);
             }
 
-        } else if (type == "get_game_state") {
-            response["type"] = "game_state";
-            response["game_id"] = game_id;
+        } catch (const std::exception& e) {
+            // General fallback in case of bad message
+            json error;
+            error["type"] = "error";
+            error["message"] = std::string("Game thread exception: ") + e.what();
 
-            response["currentPlayers"] = session.players;
-            response["host"] = session.host;
-            response["turnName"] = session.players[session.current_turn];
-            response["remainingCards"] = session.deck.size();
-            response["discardPile"] = session.discard_pile;
-            response["status"] = "ok";
-        }
-        else if (type == "get_player_hand") {
-            response["type"] = "player_hand";
-            response["game_id"] = game_id;
-            response["player_name"] = player;
-        
-            if (!session.hands.count(player)) {
-                response["status"] = "no_hand";
-            } else {
-                response["status"] = "ok";
-                response["hand"] = session.hands[player];
-            }
-        }
-        
-        else if (type == "get_player_info") {
-            response["type"] = "player_info";
-            response["game_id"] = game_id;
-        
-            json player_data;
-            if (!session.hands.count(player)) {
-                response["status"] = "not_found";
-            } else {
-                player_data["name"] = player;
-                player_data["numCards"] = session.hands[player].size();
-                player_data["hand"] = session.hands[player];
-                player_data["status"] = "active";
-                response["player"] = player_data;
-                response["status"] = "ok";
-            }
-        }
-        
-        else if (type == "player_disconnected") {
-            response["type"] = "player_disconnected";
-            response["game_id"] = game_id;
-            response["player_name"] = player;
-        
-            // remove player
-            session.players.erase(
-                std::remove(session.players.begin(), session.players.end(), player),
-                session.players.end()
-            );
-            session.hands.erase(player);
-        
-            if (session.host == player) {
-                session.host = session.players.empty() ? "" : session.players.front();
-            }
-        
-            if (session.players.empty()) {
-                std::lock_guard<std::mutex> lock(game_mutex);
-                game_sessions.erase(game_id);  // Remove the game session
-                break;  // Exit the game thread loop as the session is over
-            } else {
-                json updated;
-                updated["type"] = "game_state";
-                updated["game_id"] = game_id;
-                updated["currentPlayers"] = session.players;
-                updated["host"] = session.host;
-                updated["turnName"] = session.players[session.current_turn];
-                updated["remainingCards"] = session.deck.size();
-                updated["discardPile"] = session.discard_pile;
-                response["updated_game_state"] = updated;
+            if (msg.contains("connection_ptr")) {
+                crow::websocket::connection* conn =
+                    reinterpret_cast<crow::websocket::connection*>(msg["connection_ptr"].get<uintptr_t>());
+                std::lock_guard<std::mutex> lock(message_queue_mutex);
+                message_queues[conn].push(error);
             }
         }
-        
-
-        // Enqueue response back to client
-        {
-            std::lock_guard<std::mutex> lock(message_queue_mutex);
-            message_queues[conn].push(response);
-        }
-
     }
-
-    
-    
 }
 
 void flush_pending_messages() {
@@ -1101,6 +1077,7 @@ void flush_pending_messages() {
         }
     }
 }
+
 
 
 int main() {
@@ -1118,9 +1095,17 @@ int main() {
     })
     .onmessage([](crow::websocket::connection& conn, const std::string& data, bool is_binary) {
         on_message(conn, data, is_binary);
-        flush_pending_messages();
+        
 
     });
+    
+    std::thread flusher([] {
+        while (true) {
+            flush_pending_messages();
+            std::this_thread::sleep_for(std::chrono::milliseconds(30)); // tweak as needed
+        }
+    });
+    flusher.detach(); // or store the thread handle if you want to control it
     
 
     app.port(9002).multithreaded().run();
