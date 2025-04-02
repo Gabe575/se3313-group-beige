@@ -318,9 +318,39 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
 
         if (!game_sessions.count(game_id)) {
             response["status"] = "not_found";
-        } else {
+            conn.send_text(response.dump());
+            return;
+        }
+        
+        GameSession& session = game_sessions[game_id];
+        
+        // Check the player is in the game
+        if (std::find(session.players.begin(), session.players.end(), player) == session.players.end()) {
+            response["status"] = "not_in_game";
+            conn.send_text(response.dump());
+            return;
+        }
+        
+        // Check if it's the player's turn
+        if (session.players[session.current_turn] != player) {
+            response["status"] = "not_your_turn";
+            conn.send_text(response.dump());
+            return;
+        }
+
+        // Check if the player has the card
+        auto &hand = session.hands[player];
+        auto it = std::find(hand.begin(), hand.end(), card);
+        if (it == hand.end())
+        {
+            response["status"] = "card_not_in_hand";
+            conn.send_text(response.dump());
+            return;
+        }
+
+        else {
             GameSession& session = game_sessions[game_id];
-            session.play_card(player, card);
+            bool played = session.play_card(player, card);
             json updated;
             updated["type"] = "game_state";
             updated["game_id"] = game_id;
