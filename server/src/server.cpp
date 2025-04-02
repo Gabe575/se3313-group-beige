@@ -334,6 +334,138 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
         conn.send_text(response.dump());
     }
 
+    // action special card
+    else if (type == "action_special_card") {
+
+        // Harrison TO DO: how is this different than playing a normal card?
+
+        std::string game_id = received["game_id"];
+        std::string player = received["player_name"];
+        std::string card_color = received["card"]["color"];
+        std::string card_value = received["card"]["value"];
+        std::string card = received["card"]
+
+        std::lock_guard<std::mutex> lock(game_mutex);
+        json response;
+        response["type"] = "special_card_played";
+        response["player_name"] = player;
+        response["card"] = card;
+
+        if (!game_sessions.count(game_id)) {
+            response["status"] = "not_found";
+        } else {
+            GameSession& session = game_sessions[game_id];
+            bool valid = session.play_card(player, card);
+
+            if (!valid) {
+                response["status"] = "invalid_play";
+            } else {
+                std::string next_player = session.players[session.current_turn];
+                response["next_player_name"] = next_player;
+
+                json updated;
+                updated["type"] = "game_state";
+                updated["game_id"] = game_id;
+                updated["currentPlayers"] = session.players;
+                updated["host"] = session.host;
+                updated["turnName"] = session.players[session.current_turn];
+                // updated["playDirection"] = session.play_direction;
+                updated["remainingCards"] = session.deck.size();
+                updated["discardPile"] = session.discard_pile;
+                response["updated_game_state"] = updated;
+            }
+        }
+
+        conn.send_text(response.dump());
+
+    }
+
+    else if (type == "call_uno") {
+        std::string game_id = received["game_id"];
+        std::string player = received["player_name"];
+
+        std::lock_guard<std::mutex> lock(game_mutex);
+        json response;
+        response["type"] = "uno_called";
+        response["player_name"] = player;
+        
+        if (!game_sessions.count(game_id)) {
+            response["status"] = "not_found";
+        } else {
+            GameSession& session = game_sessions[game_id];
+            if (session.hands[player].size() == 1) {
+                // Display notification on screen?
+                // For now, just log cout
+                std::cout << player << " called UNO!" << std::endl;
+                // mark UNO called? Probably not needed
+            }
+
+            json updated;
+            updated["type"] = "game_state";
+            updated["game_id"] = game_id;
+            updated["currentPlayers"] = session.players;
+            updated["host"] = session.host;
+            updated["turnName"] = session.players[session.current_turn];
+            // updated["playDirection"] = session.play_direction;
+            updated["remainingCards"] = session.deck.size();
+            updated["discardPile"] = session.discard_pile;
+            response["updated_game_state"] = updated;
+        }
+
+        conn.send_text(response.dump());
+    }
+
+    // get winner info
+    else if (type == "get_winner_info") {
+        std::string game_id = received["game_id"];
+        std::lock_guard<std::mutex> lock(game_mutex);
+        json response;
+        response["type"] = "game_over";
+        response["game_id"] = game_id;
+
+        if (!game_sessions.count(game_id)){
+            response["status"] = "not_found"; 
+        } else {
+            GameSession& session = game_sessions[game_id];
+
+            std::string winner;
+            std::unordered_map<std::string, int> final_scores;
+
+            int lowest = INT_MAX;
+            for (const auto& [player, hand] : session.hands) {
+                int score = 0;
+                for (const auto& card : hand) {
+                    // wilds/plus4 are 50 points
+                    if (card.find("wild_plus4") != std::string::npos) score += 50;
+                    else if (card.find("wild") != std::string::npos) score += 50;
+                    // plus2, reverse, skips are 20 points
+                    else if (card.find("skip") != std::string::npos) score += 20;
+                    else if (card.find("plus2") != std::string::npos) score += 20;
+                    else if (card.find("reverse") != std::string::npos) score += 20;
+                    // regular cards are based on face value
+                    else {
+                        try {
+                            score += std::stoi(card.substr(card.find('_') + 1));
+                        } catch (...) {
+                            score += 0;
+                        }
+                    }
+                }
+
+                final_scores[player] = score;
+                if (score < lowest) {
+                    lowest = score;
+                    winner = player
+                }
+            }
+
+            response["winner"] = winner;
+            response["final_scores"] = final_scores;
+        }
+
+        conn.send_text(response.dump());
+    }
+
     else if (type == "player_disconnected") {
         std::string game_id = received["game_id"];
         std::string player = received["player_name"];
