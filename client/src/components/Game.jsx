@@ -81,6 +81,22 @@ export default function Game() {
 
                 }
 
+                if (data.type === "special_card_played") {
+                    console.log(`${data.player_name} played special card ${data.card.value}`);
+                    setGameInfo(data.updated_game_state);
+                }
+
+                if (data.type === "uno_called"){
+                    console.log(`${data.player_name} called UNO!`);
+                    setGameInfo(data.updated_game_state);
+                }
+
+                if (data.type === "game_over") {
+                    alert(`Game over! Winner: ${data.winner}`);
+                    console.log("Final scores:", data.final_scores);
+                    navigate("/");
+                }
+
             };
         }
         return () => {
