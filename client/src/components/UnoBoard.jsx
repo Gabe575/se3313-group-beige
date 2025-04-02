@@ -65,52 +65,6 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
     }, [gameInfo]);
 
-    // These are for testing
-    function getRandomCard() {
-
-        const colours = ['red', 'blue', 'green', 'yellow'];
-        const actions = ['skip', 'reverse', 'plus2', 'wild', 'plus4'];
-        const randomColour = colours[Math.floor(Math.random() * colours.length)];
-        const randomAction = actions[Math.floor(Math.random() * actions.length)];
-
-        let ob;
-        if (Math.random() * 10 > 5) {
-            ob = {
-                colour: randomColour,
-                digit: Math.floor(Math.random() * 10), // Can be 0-9
-                action: null,
-                id: Math.random().toString(36).substr(2, 9), // Random unique ID
-                playable: true, // Assume the card is playable for now
-                disableShadow: false,
-            }
-        } else {
-            ob = {
-                colour: randomColour,
-                digit: null, // Can be 0-9
-                action: randomAction,
-                id: Math.random().toString(36).substr(2, 9), // Random unique ID
-                playable: true, // Assume the card is playable for now
-                disableShadow: false,
-            }
-        }
-
-        return ob;
-    }
-    const getSomeCards = (length) => {
-        let cards = [];
-        for (let i = 0; i < length; i++) {
-            cards.push(getRandomCard());
-        }
-        return cards;
-    };
-
-
-
-
-
-    
-
-
     function getOpponentCards(numOfCards) {
         
         // Returns only the info needed for a basic hidden card
@@ -142,7 +96,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                     colour: cardData.colour,
                     digit: cardData.digit,
                     id: cardId,
-                    playable: true,
+                    playable: cardData.playable,
                     disableShadow: false,
                     hidden: false,
                     name: cardData.name,
@@ -153,7 +107,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                     colour: cardData.colour,
                     action: cardData.action,
                     id: cardId,
-                    playable: true,
+                    playable: cardData.playable,
                     disableShadow: false,
                     hidden: false,
                     name: cardData.name,
@@ -165,7 +119,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
             return {
                 action: cardData.action,
                 id: cardId,
-                playable: true,
+                playable: cardData.playable,
                 disableShadow: false,
                 hidden: false,
                 name: cardData.name,
@@ -183,8 +137,8 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
         cardArray.forEach(card => {
 
-            if (card == "wild") return cards.push(getCard({ action: 'wild', name: card, game: gameId }));
-            else if (card == "wild_plus4") return cards.push(getCard({ action: 'wild_plus4', name: card, game: gameId }));
+            if (card == "wild") return cards.push(getCard({ action: 'wild', name: card, game: gameId, playable: true }));
+            else if (card == "wild_plus4") return cards.push(getCard({ action: 'wild_plus4', name: card, game: gameId, playable: true }));
             
             let digit, action;
             let colour = card.split('_')[0];
@@ -194,8 +148,8 @@ export default function UnoBoard({ gameInfo, myCards }) {
             if (/^[0-9]$/.test(suffix)) digit = suffix;
             else action = suffix;
 
-            if (digit) return cards.push(getCard({ colour: colour, digit: digit, name: card, game: gameId }));
-            else return cards.push(getCard({ colour: colour, action: action, name: card, game: gameId }));
+            if (digit) return cards.push(getCard({ colour: colour, digit: digit, name: card, game: gameId, playable: true }));
+            else return cards.push(getCard({ colour: colour, action: action, name: card, game: gameId, playable: true }));
 
         });
 
@@ -205,14 +159,16 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
     function getDiscardPileTop(cardArray) {
 
+        
+
         if (cardArray == null) return null;
 
         let topCard = cardArray[cardArray.length - 1];
 
         let cards = [];
 
-        if (topCard == "wild") cards.push(getCard({ action: 'wild', name: topCard, game: gameId }));
-        else if (topCard == "wild_plus4") cards.push(getCard({ action: 'wild_plus4', name: topCard, game: gameId }));
+        if (topCard == "wild") cards.push(getCard({ action: 'wild', name: topCard, game: gameId, playable: false }));
+        else if (topCard == "wild_plus4") cards.push(getCard({ action: 'wild_plus4', name: topCard, game: gameId, playable: false }));
         
         // Only check for digit / action cards if its not a wild card or wild_plus4
         if (cards.length == 0) {
@@ -225,10 +181,10 @@ export default function UnoBoard({ gameInfo, myCards }) {
             if (/^[0-9]$/.test(suffix)) digit = suffix;
             else action = suffix;
 
-            if (digit) return cards.push(getCard({ colour: colour, digit: digit, name: topCard, game: gameId }));
-            else return cards.push(getCard({ colour: colour, action: action, name: topCard, game: gameId }));
+            if (digit) cards.push(getCard({ colour: colour, digit: digit, name: topCard, game: gameId, playable: false }));
+            else cards.push(getCard({ colour: colour, action: action, name: topCard, game: gameId, playable: false }));
         }
-
+        
         // Just in case theres more than 1 card somehow, force it into 1 card in an array
         if (cards.length > 1) return [cards[0]];
 
