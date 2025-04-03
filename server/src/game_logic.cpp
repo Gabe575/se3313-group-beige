@@ -74,7 +74,7 @@ void GameSession::add_player(std::string player_id) {
 }
 
 // handles playing a card. Returns true if successful, false if invalid
-bool GameSession::play_card(std::string player_id, std::string card, std::string chosen_color = "") {
+bool GameSession::play_card(std::string player_id, std::string card, std::string chosen_color) {
     // Check if it's the player's turn
     if (player_id != players[current_turn]) return false;
     
@@ -94,7 +94,7 @@ bool GameSession::play_card(std::string player_id, std::string card, std::string
     std::string top_value = top_card.substr(top_card.find('_') + 1);
 
     // Wild card always playable, but must include color
-    if (card == "wild" || card == "wild_plus4") {
+    if (card.find("wild") == 0) {
         if (chosen_color.empty()) return false; // need a chosen color
         wild_color = chosen_color; // set wild color
         std::cout << player_id << " chose wild color: " << wild_color << std::endl;
@@ -172,17 +172,13 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         }
         
         std::cout << "Waiting for " << player_id << " to choose a color..." << std::endl;
-        //pending_wild_choice = player_id; // Track player needing to select a color
-        //wild_color = ""; // Reset wild color
         current_turn = (current_turn + 2) % players.size();
     } 
     // Wild Card
     else if (card.find("wild") != std::string::npos) {
         std::cout << "Wild card played! Waiting for " << player_id << " to choose a color..." << std::endl;
         
-        // Ask the player to select a color
-        //pending_wild_choice = player_id; // Track the player who must choose
-        //wild_color = ""; // Reset wild color until the player selects one
+        current_turn = (current_turn + 1) % players.size();
     } 
     // Regular card, do nothing
     else {
