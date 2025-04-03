@@ -64,6 +64,13 @@ export default function Game() {
                     if (!data.game_started) {
                         navigate(`/lobby/${data.game_id}`);
                     }
+
+                    // If there's 1 player exit
+                    if (data.currentPlayers.length < 2) {
+                        alert("Other players left. Returning to menu.");
+                        return navigate('/');
+                    }
+
                 }
 
                 if (data.type === "player_hand") {

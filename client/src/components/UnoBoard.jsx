@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
+import { useSocket } from "./WebSocketProvider";
 
 import CardStack from "./CardStack";
+import Card from "./Card";
 
 export default function UnoBoard({ gameInfo, myCards }) {
 
     const { gameId } = useParams();
-    const [gameState, setGameState] = useState(null);
     const [playerOrder, setPlayerOrder] = useState([]);
+
+    const socket = useSocket();
 
     let navigate = useNavigate();
 
@@ -22,6 +25,18 @@ export default function UnoBoard({ gameInfo, myCards }) {
         }
     }
 
+    const skipTurn = () => {
+        // It has to be their turn to skip
+        if (gameInfo.currentPlayers[gameInfo.turn_index] == sessionStorage.getItem('name')) {
+            // Send a message to the server to skip this players turn
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(
+                    JSON.stringify({ type: "skip_turn", game_id: gameId, player_name: sessionStorage.getItem('name') })
+                );
+                navigate(`/`);
+            }
+        }
+    }
 
     // Validates the gameInfo and checks the player is allowed to be in this game
     useEffect(() => {
@@ -41,16 +56,16 @@ export default function UnoBoard({ gameInfo, myCards }) {
             else setPlayerOrder([gameInfo.currentPlayers[0], null, null, gameInfo.currentPlayers[1]]);
         }
         else if (gameInfo.currentPlayers.length == 3) {
-          if (playerIndex === 0) setPlayerOrder([null, gameInfo.currentPlayers[1], gameInfo.currentPlayers[2], gameInfo.currentPlayers[0]]);
-          else if (playerIndex === 1) setPlayerOrder([null, gameInfo.currentPlayers[2], gameInfo.currentPlayers[0], gameInfo.currentPlayers[1]]);
-          else setPlayerOrder([null, gameInfo.currentPlayers[0], gameInfo.currentPlayers[1], gameInfo.currentPlayers[2]]);
+            if (playerIndex === 0) setPlayerOrder([null, gameInfo.currentPlayers[1], gameInfo.currentPlayers[2], gameInfo.currentPlayers[0]]);
+            else if (playerIndex === 1) setPlayerOrder([null, gameInfo.currentPlayers[2], gameInfo.currentPlayers[0], gameInfo.currentPlayers[1]]);
+            else setPlayerOrder([null, gameInfo.currentPlayers[0], gameInfo.currentPlayers[1], gameInfo.currentPlayers[2]]);
 
         }
         else if (gameInfo.currentPlayers.length == 4) {
-          if (playerIndex === 0) setPlayerOrder([gameInfo.currentPlayers[2], gameInfo.currentPlayers[1], gameInfo.currentPlayers[3], gameInfo.currentPlayers[0]]);
-          else if (playerIndex === 1) setPlayerOrder([gameInfo.currentPlayers[3], gameInfo.currentPlayers[2], gameInfo.currentPlayers[0], gameInfo.currentPlayers[1]]);
-          else if (playerIndex === 2) setPlayerOrder([gameInfo.currentPlayers[1], gameInfo.currentPlayers[0], gameInfo.currentPlayers[2], gameInfo.currentPlayers[3]]);
-          else setPlayerOrder([gameInfo.currentPlayers[1], gameInfo.currentPlayers[0], gameInfo.currentPlayers[2], gameInfo.currentPlayers[3]]);
+            if (playerIndex === 0) setPlayerOrder([gameInfo.currentPlayers[2], gameInfo.currentPlayers[1], gameInfo.currentPlayers[3], gameInfo.currentPlayers[0]]);
+            else if (playerIndex === 1) setPlayerOrder([gameInfo.currentPlayers[3], gameInfo.currentPlayers[2], gameInfo.currentPlayers[0], gameInfo.currentPlayers[1]]);
+            else if (playerIndex === 2) setPlayerOrder([gameInfo.currentPlayers[1], gameInfo.currentPlayers[0], gameInfo.currentPlayers[2], gameInfo.currentPlayers[3]]);
+            else setPlayerOrder([gameInfo.currentPlayers[1], gameInfo.currentPlayers[0], gameInfo.currentPlayers[2], gameInfo.currentPlayers[3]]);
         }
         // If invalid gameInfo, send them back to the lobby
         else navigate(`/lobby/${gameId}`);
@@ -59,14 +74,10 @@ export default function UnoBoard({ gameInfo, myCards }) {
         // Just in case the url lobby name doesnt match the recieved id from the server
         if (gameId != gameInfo.game_id) console.log('Error occured with mismatch between the expected game id and actual game id');
 
-
-
-        
-
     }, [gameInfo]);
 
     function getOpponentCards(numOfCards) {
-        
+
         // Returns only the info needed for a basic hidden card
         let getHiddenCard = () => {
             return {
@@ -75,7 +86,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                 hidden: true
             }
         }
-        
+
         // Get a hidden card component for each in their hand
         let opponentCards = [];
         for (let i = 0; i < numOfCards; i++) {
@@ -139,7 +150,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
             if (card == "wild") return cards.push(getCard({ action: 'wild', name: card, game: gameId, playable: true }));
             else if (card == "wild_plus4") return cards.push(getCard({ action: 'wild_plus4', name: card, game: gameId, playable: true }));
-            
+
             let digit, action;
             let colour = card.split('_')[0];
             let suffix = card.split('_')[1];
@@ -157,21 +168,19 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
     }
 
-    function getDiscardPileTop(cardArray) {
-
-        
+    function getDiscardPile(cardArray) {
 
         if (cardArray == null) return null;
 
         let topCard = cardArray[cardArray.length - 1];
 
-        let cards = [];
+        let cardData = null;
 
-        if (topCard == "wild") cards.push(getCard({ action: 'wild', name: topCard, game: gameId, playable: false }));
-        else if (topCard == "wild_plus4") cards.push(getCard({ action: 'wild_plus4', name: topCard, game: gameId, playable: false }));
-        
+        if (topCard == "wild") cardData = (getCard({ action: 'wild', name: topCard, game: gameId, playable: false }));
+        else if (topCard == "wild_plus4") cardData = (getCard({ action: 'wild_plus4', name: topCard, game: gameId, playable: false }));
+
         // Only check for digit / action cards if its not a wild card or wild_plus4
-        if (cards.length == 0) {
+        if (cardData == null) {
 
             let digit, action;
             let colour = topCard.split('_')[0];
@@ -181,18 +190,26 @@ export default function UnoBoard({ gameInfo, myCards }) {
             if (/^[0-9]$/.test(suffix)) digit = suffix;
             else action = suffix;
 
-            if (digit) cards.push(getCard({ colour: colour, digit: digit, name: topCard, game: gameId, playable: false }));
-            else cards.push(getCard({ colour: colour, action: action, name: topCard, game: gameId, playable: false }));
+            if (digit) cardData = (getCard({ colour: colour, digit: digit, name: topCard, game: gameId, playable: false }));
+            else cardData = (getCard({ colour: colour, action: action, name: topCard, game: gameId, playable: false }));
         }
-        
-        // Just in case theres more than 1 card somehow, force it into 1 card in an array
-        if (cards.length > 1) return [cards[0]];
 
-        return cards;
+        return <Card {...cardData} />;
 
     }
 
-        
+    function getDrawCardPile() {
+        let card = {
+            id: Math.random().toString(36).substr(2, 9),
+            playable: true,
+            disableShadow: false,
+            hidden: true,
+            name: 'draw_card',
+            game: gameId
+        }
+        return <Card {...card} />
+    }
+
     return (
         <>
             <div className="relative w-full h-[1000px] bg-red-100">
@@ -245,11 +262,13 @@ export default function UnoBoard({ gameInfo, myCards }) {
                     </>
                 )}
 
-                {/* Discard Pile */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2">
-                    
-                    <CardStack cards={getDiscardPileTop(gameInfo.discard_pile) || null} direction="horizontal" />
+                {/* Discard pile and draw pile */}
+                <div className="absolute top-14/32 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                    {getDrawCardPile()}
+                    {getDiscardPile(gameInfo.discard_pile)}
                 </div>
+
+
 
                 {/* Turn display */}
                 <div className="absolute top-2/3 left-1/2 transform -translate-x-1/2">
@@ -258,6 +277,13 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
             </div>
 
+            <div className="flex flex-col justify-center items-center mt-10">
+                <button
+                    className={`w-80 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700`}
+                    onClick={() => skipTurn()}>
+                    Skip Turn
+                </button>
+            </div>
 
 
             <div className="flex flex-col justify-center items-center mt-10">
@@ -267,6 +293,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                     Leave game
                 </button>
             </div>
+
         </>
     );
 }
