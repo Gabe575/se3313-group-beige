@@ -56,6 +56,8 @@ public:
 
     std::string draw_card(const std::string& player_id);
 
+    bool check_game_over(std::string& winner, std::unordered_map<std::string, int>& final_scores);
+
     /**
      * @brief Applies special effects of action cards (Skip, Reverse, Draw Two, Wild, etc.).
      * @param player_id The player who played the special card.
