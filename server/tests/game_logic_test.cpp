@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "game_logic.h"
+#include <climits>
 
 // Fixture for setting up GameSession before each test
 class GameLogicTest : public ::testing::Test {

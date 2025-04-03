@@ -11,7 +11,7 @@
 #include <queue>
 #include <condition_variable>
 #include <thread>
-
+#include <cstdlib>  // For std::getenv
 using json = nlohmann::json;
 
 // Global game sessions and connection management
@@ -577,5 +577,8 @@ int main() {
     flusher.detach(); // or store the thread handle if you want to control it
     
 
-    app.port(9002).multithreaded().run();
+    char* port = std::getenv("PORT");
+    int port_number = port ? std::stoi(port) : 8080;
+    app.bindaddr("0.0.0.0").port(port_number).multithreaded().run();
+
 }

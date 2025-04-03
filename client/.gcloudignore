@@ -1,0 +1,10 @@
+# .gcloudignore
+
+node_modules/
+.git/
+.firebase/
+firebase-debug.log
+.env
+.env.*
+*.log
+!dist/**
