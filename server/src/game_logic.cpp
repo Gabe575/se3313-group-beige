@@ -2,7 +2,7 @@
 #include <iostream>
 #include <random>
 
-GameSession::GameSession() : game_id(""), host(""), current_turn(0), pending_wild_choice(""), wild_color("") {}
+GameSession::GameSession() : game_id(""), host(""), current_turn(0), wild_color("") {}
 
 // initialize game session with a given game ID
 GameSession::GameSession(std::string id) : game_id(id) {
@@ -74,7 +74,7 @@ void GameSession::add_player(std::string player_id) {
 }
 
 // handles playing a card. Returns true if successful, false if invalid
-bool GameSession::play_card(std::string player_id, std::string card) {
+bool GameSession::play_card(std::string player_id, std::string card, std::string chosen_color = "") {
     // Check if it's the player's turn
     if (player_id != players[current_turn]) return false;
     
@@ -93,11 +93,21 @@ bool GameSession::play_card(std::string player_id, std::string card) {
     std::string top_color = top_card.substr(0, top_card.find('_'));
     std::string top_value = top_card.substr(top_card.find('_') + 1);
 
-    // Check if the card is playable (matching color, value, or wild)
-    if (!(played_color == "wild" || played_color == "wild_plus4" || played_color == top_color || played_value == top_value)) {
-        return false;
+    // Wild card always playable, but must include color
+    if (card == "wild" || card == "wild_plus4") {
+        if (chosen_color.empty()) return false; // need a chosen color
+        wild_color = chosen_color; // set wild color
+        std::cout << player_id << " chose wild color: " << wild_color << std::endl;
+    } else {
+        // if last card was a wild, compare to chosen color
+        if (!wild_color.empty()) {
+            if (played_color != wild_color) return false;
+        } else {
+            // last card was not a wild, so you need to match number or color
+            if (played_color != top_color && played_value != top_value) return false;
+        }
+        wild_color = ""; // clear wild card color if not wild card
     }
-    
 
     // announce the move
     std::cout << player_id << " played " << card << std::endl;
@@ -189,6 +199,7 @@ json GameSession::to_json() {
         {"top_card", discard_pile.back()},
         {"hands", hands},
         {"discard_pile", discard_pile},
-        {"game_started", game_started}
+        {"game_started", game_started},
+        {"wild_color", wild_color}
     };
 }

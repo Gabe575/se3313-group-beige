@@ -187,6 +187,32 @@ TEST_F(GameLogicTest, WinnerHasZeroCardsAndLowestScore) {
     EXPECT_EQ(scores["loser"], 25); // 5 + 20 (skip)
 }
 
+TEST_F(GameLogicTest, WildCardSetsChosenColor) {
+    std::string wild = "wild";
+    game.hands["player1"] = { wild };
+
+    // Play wild card with chosen color "blue"
+    EXPECT_TRUE(game.play_card("player1", wild, "blue"));
+    EXPECT_EQ(game.wild_color, "blue");  // Check that the color is stored
+    EXPECT_EQ(game.to_json()["discard_pile"].back(), wild);
+
+    // Give player2 a matching blue card and an invalid red card
+    game.hands["player2"] = { "blue_5", "red_7" };
+
+    // Valid blue card should succeed
+    EXPECT_TRUE(game.play_card("player2", "blue_5"));
+    EXPECT_EQ(game.wild_color, ""); // wild_color should reset after non-wild card
+
+    // Reassign player1 a new wild card to repeat test
+    game.hands["player1"] = { "wild" };
+    EXPECT_TRUE(game.play_card("player1", "wild", "green"));
+    EXPECT_EQ(game.wild_color, "green");
+
+    // Now player2 tries to play red_7 again (wrong color)
+    game.hands["player2"] = { "red_7" };
+    EXPECT_FALSE(game.play_card("player2", "red_7")); // should fail
+}
+
 // Add this main() if you're not linking gtest_main
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

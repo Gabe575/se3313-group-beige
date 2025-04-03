@@ -424,13 +424,15 @@ void game_thread_loop(const std::string& game_id) {
             // Handle message types
             if (type == "play_card") {
                 std::string card = msg["card"];
+                std::string chosen_color = msg.value("colour", ""); // optional based on wild card
+
                 response["type"] = "card_played";
                 response["player_name"] = player;
                 response["card"] = card;
 
                 if (!session.hands.count(player)) {
                     response["status"] = "not_found";
-                } else if (!session.play_card(player, card)) {
+                } else if (!session.play_card(player, card, chosen_color)) {
                     response["status"] = "invalid";
                 } else {
                     response["status"] = "ok";

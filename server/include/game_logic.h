@@ -24,7 +24,6 @@ public:
     int current_turn = 0; // index of player whose turn it is
     bool game_started = false;
 
-    std::string pending_wild_choice = "";
     std::string wild_color = "";
 
     GameSession();
@@ -50,9 +49,10 @@ public:
      * @brief Handles playing a card from a player's hand.
      * @param player_id The player attempting to play a card.
      * @param card The card being played.
+     * @param chosen_colour The chosen wild card color if a wild card is played.
      * @return True if the move was valid, false otherwise.
      */
-    bool play_card(std::string player_id, std::string card);
+    bool play_card(std::string player_id, std::string card, std::string chosen_color = "");
 
     std::string draw_card(const std::string& player_id);
 
