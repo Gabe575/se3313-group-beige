@@ -46,8 +46,14 @@ void GameSession::initialize_deck() {
     // randomly shuffle deck
     std::shuffle(deck.begin(), deck.end(), rng);
 
+    while (!deck.empty() && 
+           (deck.back() == "wild" || deck.back() == "wild_plus4")) {
+        std::shuffle(deck.begin(), deck.end(), rng); // Reshuffle to avoid wild cards starting
+    }
+
     // Set initial discard card
-    discard_pile.push_back(deck.back()); 
+    discard_pile.push_back(deck.back());
+
     deck.pop_back();
 }
 
