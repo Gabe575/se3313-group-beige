@@ -198,38 +198,51 @@ export default function UnoBoard({ gameInfo, myCards }) {
             <div className="relative w-full h-[1000px] bg-red-100">
                 {/* Player 1 */}
                 {playerOrder[0] && (
-                    <div className="absolute top-25 left-1/2 transform -translate-x-1/2">
-                        <div className="text-center">
-                            <h2 className="text-xl">{gameInfo.currentPlayers[0]}</h2>
+                    <>
+                        <div className="absolute top-10 left-1/2 transform -translate-x-1/2">
+                            <h2 className="text-xl">{playerOrder[0]}</h2>
                         </div>
-                        <div>
+                        <div className="absolute top-40 left-1/2 transform -translate-x-1/2">
                             <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[0]])} direction="horizontal" />
                         </div>
-                    </div>
+                    </>
                 )}
 
                 {/* Player 2 */}
                 {playerOrder[1] && (
-                    <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
-                        <h2 className="text-xl text-center">{gameInfo.currentPlayers[1]}</h2>
-                        <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[1]])} direction="vertical" />
-                    </div>
+                    <>
+                        <div className="absolute top-1/2 left-10 transform -translate-y-1/2">
+                            <h2 className="text-xl text-center">{playerOrder[1]}</h2>
+                        </div>
+                        <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
+
+                            <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[1]])} direction="vertical" />
+                        </div>
+                    </>
                 )}
 
                 {/* Player 3 */}
                 {playerOrder[2] && (
-                    <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
-                        <h2 className="text-xl text-center">{gameInfo.currentPlayers[2]}</h2>
-                        <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[2]])} direction="vertical" />
-                    </div>
+                    <>
+                        <div className="absolute top-1/2 right-10 transform -translate-y-1/2">
+                            <h2 className="text-xl text-center">{playerOrder[2]}</h2>
+                        </div>
+                        <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
+                            <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[2]])} direction="vertical" />
+                        </div>
+                    </>
                 )}
 
                 {/* Player 4 (Self) */}
                 {playerOrder[3] && (
-                    <div className="absolute bottom-25 left-1/2 transform -translate-x-1/2 mb-8">
-                        <h2 className="text-xl text-center">{gameInfo.currentPlayers[3]}</h2>
-                        <CardStack cards={cardNameArrayToObjectArray(myCards)} direction="horizontal" />
-                    </div>
+                    <>
+                        <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 mb-8">
+                            <h2 className="text-xl text-center">{sessionStorage.getItem('name')}</h2>
+                        </div>
+                        <div className="absolute bottom-35 left-1/2 transform -translate-x-1/2 mb-8">
+                            <CardStack cards={cardNameArrayToObjectArray(myCards)} direction="horizontal" />
+                        </div>
+                    </>
                 )}
 
                 {/* Discard Pile */}
@@ -247,7 +260,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
 
 
-            <div className="flex flex-col justify-center items-center min-h-screen">
+            <div className="flex flex-col justify-center items-center mt-10">
                 <button
                     className={`w-80 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-700`}
                     onClick={() => leaveGame()}>
