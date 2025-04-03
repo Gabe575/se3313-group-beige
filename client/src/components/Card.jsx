@@ -40,7 +40,7 @@ export default function Card({ action, colour, digit, disableShadow = false, id,
     };
 
 
-    const sendCardPlayMessage = (colourChoice = null) => {
+    const sendCardPlayMessage = (colourChoice = "") => {
         const message = {
             type: "play_card",
             game_id: game,
@@ -50,6 +50,7 @@ export default function Card({ action, colour, digit, disableShadow = false, id,
         };
 
         if (socket && socket.readyState === WebSocket.OPEN) {
+            console.log(JSON.stringify(message));
             socket.send(JSON.stringify(message));
             console.log('Socket sent... card played');
         }
