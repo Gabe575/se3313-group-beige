@@ -69,13 +69,13 @@ export default function GameList() {
                 <h2 className="text-center text-lg font-bold text-black">Available Games</h2>
                 <ul className="space-y-2">
                     {games.length > 0 ? (
-                        games.map((game) => (
+                        games.map((game, index) => (
                             <li
-                                key={game[1]}
+                                key={index}
                                 className="p-2 bg-gray-200 rounded-lg text-center cursor-pointer hover:bg-gray-400 transition"
-                                onClick={() => joinGame(game[1])}
+                                onClick={() => joinGame(game.id)}
                             >
-                                Join - {game[1]}
+                                Join - {game.id}
                             </li>
                         ))
                     ) : (

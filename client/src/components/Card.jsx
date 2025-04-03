@@ -1,29 +1,64 @@
 // Creates a card that shows the corresponding card image to the properties etc
 
+import { useState } from "react";
 import { useSocket } from "./WebSocketProvider";
 
 export default function Card({ action, colour, digit, disableShadow = false, id, playable, className, hidden, name, game }) {
-    
+
     const socket = useSocket();
+    const [showColourPicker, setShowColourPicker] = useState(false);
+    const [selectedColor, setSelectedColor] = useState(null);
 
     const onClick = () => {
-        if (playable) {
-            console.log(`Card played: ${name}`);
-            
-            const message = {
-                type: "play_card",
-                game_id: game,
-                player_name: sessionStorage.getItem('name'),
-                card: name
-            }
 
-            // Send card played message request
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(
-                    JSON.stringify(message)
-                );
-            }
+        if (name == 'draw_card') {
+
+            console.log('card drawn')
+
+            // Player clicked on draw card
+
+            // Check that it's their turn
+
+            // Check that they havent already drawn a card this turn
+
+            // Send draw_card
+
+
+            return;
         }
+
+        if (!playable) return;
+
+        console.log(`Card played: ${name}`);
+
+        // Show colour picker for wild cards
+        if (action === "wild" || action === "wild_plus4") {
+            setShowColourPicker(true);
+        } else {
+            sendCardPlayMessage();
+        }
+    };
+
+
+    const sendCardPlayMessage = (colourChoice = null) => {
+        const message = {
+            type: "play_card",
+            game_id: game,
+            player_name: sessionStorage.getItem('name'),
+            card: name,
+            colour: colourChoice
+        };
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify(message));
+        }
+
+        setShowColourPicker(false);
+    };
+
+    const handleColorSelect = (color) => {
+        setSelectedColor(color);
+        sendCardPlayMessage(color);
     };
 
     const getContent = () => {
@@ -51,33 +86,29 @@ export default function Card({ action, colour, digit, disableShadow = false, id,
     }
 
     return (
-        <div
-            className={`relative w-21 h-32 rounded-lg shadow-lg ${disableShadow ? "shadow-none" : "shadow-xl"} ${playable ? "cursor-pointer" : "cursor-default"} transition-all ${className}`}
-            style={{
-                transformStyle: "preserve-3d",
-            }}
-            onClick={onClick}
-        >
+        <div className="relative">
             <div
-                className="absolute inset-0 bg-white rounded-lg flex items-center justify-center overflow-hidden"
-                style={{ backfaceVisibility: "hidden" }}
+                className={`relative w-21 h-32 rounded-lg shadow-lg ${disableShadow ? "shadow-none" : "shadow-xl"} ${playable ? "cursor-pointer" : "cursor-default"} transition-all ${className}`}
+                style={{ transformStyle: "preserve-3d" }}
+                onClick={onClick}
             >
-                {getContent()}
+                <div className="absolute inset-0 bg-white rounded-lg flex items-center justify-center overflow-hidden" style={{ backfaceVisibility: "hidden" }}>
+                    {getContent()}
+                </div>
             </div>
 
-            <div
-                className="absolute inset-0 bg-gray-300 rounded-lg flex items-center justify-center overflow-hidden"
-                style={{
-                    transform: "rotateY(180deg)",
-                    backfaceVisibility: "hidden",
-                }}
-            >
-                <img
-                    src="/assets/images/back.png"
-                    alt="Back of the card"
-                    className="w-28 h-20 object-contain"
-                />
-            </div>
+            {showColourPicker && (
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 p-2 bg-white shadow-lg rounded-md flex space-x-2">
+                    {["red", "blue", "green", "yellow"].map((colour) => (
+                        <button
+                            key={colour}
+                            className={`w-8 h-8 rounded-full border-2 border-black`}
+                            style={{ backgroundColor: colour }}
+                            onClick={() => handleColorSelect(colour)}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
