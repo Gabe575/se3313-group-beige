@@ -40,7 +40,7 @@ export default function Card({ action, colour, digit, disableShadow = false, id,
     };
 
 
-    const sendCardPlayMessage = (colourChoice = null) => {
+    const sendCardPlayMessage = (colourChoice = "") => {
         const message = {
             type: "play_card",
             game_id: game,
