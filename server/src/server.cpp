@@ -754,6 +754,7 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
             for (const auto &[player, hand] : session.hands) {
                 player_hands[player] = hand.size();
             }
+            response["turn_index"] = session.current_turn;
             response["player_hands"] = player_hands;
         }
         conn.send_text(response.dump());

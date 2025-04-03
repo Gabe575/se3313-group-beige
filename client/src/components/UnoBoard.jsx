@@ -65,52 +65,6 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
     }, [gameInfo]);
 
-    // These are for testing
-    function getRandomCard() {
-
-        const colours = ['red', 'blue', 'green', 'yellow'];
-        const actions = ['skip', 'reverse', 'plus2', 'wild', 'plus4'];
-        const randomColour = colours[Math.floor(Math.random() * colours.length)];
-        const randomAction = actions[Math.floor(Math.random() * actions.length)];
-
-        let ob;
-        if (Math.random() * 10 > 5) {
-            ob = {
-                colour: randomColour,
-                digit: Math.floor(Math.random() * 10), // Can be 0-9
-                action: null,
-                id: Math.random().toString(36).substr(2, 9), // Random unique ID
-                playable: true, // Assume the card is playable for now
-                disableShadow: false,
-            }
-        } else {
-            ob = {
-                colour: randomColour,
-                digit: null, // Can be 0-9
-                action: randomAction,
-                id: Math.random().toString(36).substr(2, 9), // Random unique ID
-                playable: true, // Assume the card is playable for now
-                disableShadow: false,
-            }
-        }
-
-        return ob;
-    }
-    const getSomeCards = (length) => {
-        let cards = [];
-        for (let i = 0; i < length; i++) {
-            cards.push(getRandomCard());
-        }
-        return cards;
-    };
-
-
-
-
-
-    
-
-
     function getOpponentCards(numOfCards) {
         
         // Returns only the info needed for a basic hidden card
@@ -142,7 +96,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                     colour: cardData.colour,
                     digit: cardData.digit,
                     id: cardId,
-                    playable: true,
+                    playable: cardData.playable,
                     disableShadow: false,
                     hidden: false,
                     name: cardData.name,
@@ -153,7 +107,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
                     colour: cardData.colour,
                     action: cardData.action,
                     id: cardId,
-                    playable: true,
+                    playable: cardData.playable,
                     disableShadow: false,
                     hidden: false,
                     name: cardData.name,
@@ -165,7 +119,7 @@ export default function UnoBoard({ gameInfo, myCards }) {
             return {
                 action: cardData.action,
                 id: cardId,
-                playable: true,
+                playable: cardData.playable,
                 disableShadow: false,
                 hidden: false,
                 name: cardData.name,
@@ -183,8 +137,8 @@ export default function UnoBoard({ gameInfo, myCards }) {
 
         cardArray.forEach(card => {
 
-            if (card == "wild") return cards.push(getCard({ action: 'wild', name: card, game: gameId }));
-            else if (card == "wild_plus4") return cards.push(getCard({ action: 'wild_plus4', name: card, game: gameId }));
+            if (card == "wild") return cards.push(getCard({ action: 'wild', name: card, game: gameId, playable: true }));
+            else if (card == "wild_plus4") return cards.push(getCard({ action: 'wild_plus4', name: card, game: gameId, playable: true }));
             
             let digit, action;
             let colour = card.split('_')[0];
@@ -194,65 +148,119 @@ export default function UnoBoard({ gameInfo, myCards }) {
             if (/^[0-9]$/.test(suffix)) digit = suffix;
             else action = suffix;
 
-            if (digit) return cards.push(getCard({ colour: colour, digit: digit, name: card, game: gameId }));
-            else return cards.push(getCard({ colour: colour, action: action, name: card, game: gameId }));
+            if (digit) return cards.push(getCard({ colour: colour, digit: digit, name: card, game: gameId, playable: true }));
+            else return cards.push(getCard({ colour: colour, action: action, name: card, game: gameId, playable: true }));
 
         });
 
         return cards;
 
     }
+
+    function getDiscardPileTop(cardArray) {
+
+        
+
+        if (cardArray == null) return null;
+
+        let topCard = cardArray[cardArray.length - 1];
+
+        let cards = [];
+
+        if (topCard == "wild") cards.push(getCard({ action: 'wild', name: topCard, game: gameId, playable: false }));
+        else if (topCard == "wild_plus4") cards.push(getCard({ action: 'wild_plus4', name: topCard, game: gameId, playable: false }));
+        
+        // Only check for digit / action cards if its not a wild card or wild_plus4
+        if (cards.length == 0) {
+
+            let digit, action;
+            let colour = topCard.split('_')[0];
+            let suffix = topCard.split('_')[1];
+
+            // If the second part is a number, set the digit
+            if (/^[0-9]$/.test(suffix)) digit = suffix;
+            else action = suffix;
+
+            if (digit) cards.push(getCard({ colour: colour, digit: digit, name: topCard, game: gameId, playable: false }));
+            else cards.push(getCard({ colour: colour, action: action, name: topCard, game: gameId, playable: false }));
+        }
+        
+        // Just in case theres more than 1 card somehow, force it into 1 card in an array
+        if (cards.length > 1) return [cards[0]];
+
+        return cards;
+
+    }
+
         
     return (
         <>
             <div className="relative w-full h-[1000px] bg-red-100">
                 {/* Player 1 */}
                 {playerOrder[0] && (
-                    <div className="absolute top-25 left-1/2 transform -translate-x-1/2">
-                        <div className="text-center">
-                            <h2 className="text-xl">{gameInfo.currentPlayers[0]}</h2>
+                    <>
+                        <div className="absolute top-10 left-1/2 transform -translate-x-1/2">
+                            <h2 className="text-xl">{playerOrder[0]}</h2>
                         </div>
-                        <div>
+                        <div className="absolute top-40 left-1/2 transform -translate-x-1/2">
                             <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[0]])} direction="horizontal" />
                         </div>
-                    </div>
+                    </>
                 )}
 
                 {/* Player 2 */}
                 {playerOrder[1] && (
-                    <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
-                        <h2 className="text-xl text-center">{gameInfo.currentPlayers[1]}</h2>
-                        <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[1]])} direction="vertical" />
-                    </div>
+                    <>
+                        <div className="absolute top-1/2 left-10 transform -translate-y-1/2">
+                            <h2 className="text-xl text-center">{playerOrder[1]}</h2>
+                        </div>
+                        <div className="absolute top-1/2 left-45 transform -translate-y-1/2">
+
+                            <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[1]])} direction="vertical" />
+                        </div>
+                    </>
                 )}
 
                 {/* Player 3 */}
                 {playerOrder[2] && (
-                    <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
-                        <h2 className="text-xl text-center">{gameInfo.currentPlayers[2]}</h2>
-                        <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[2]])} direction="vertical" />
-                    </div>
+                    <>
+                        <div className="absolute top-1/2 right-10 transform -translate-y-1/2">
+                            <h2 className="text-xl text-center">{playerOrder[2]}</h2>
+                        </div>
+                        <div className="absolute top-1/2 right-45 transform -translate-y-1/2">
+                            <CardStack cards={getOpponentCards(gameInfo.player_hands[playerOrder[2]])} direction="vertical" />
+                        </div>
+                    </>
                 )}
 
                 {/* Player 4 (Self) */}
                 {playerOrder[3] && (
-                    <div className="absolute bottom-25 left-1/2 transform -translate-x-1/2 mb-8">
-                        <h2 className="text-xl text-center">{gameInfo.currentPlayers[3]}</h2>
-                        <CardStack cards={cardNameArrayToObjectArray(myCards)} direction="horizontal" />
-                    </div>
+                    <>
+                        <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 mb-8">
+                            <h2 className="text-xl text-center">{sessionStorage.getItem('name')}</h2>
+                        </div>
+                        <div className="absolute bottom-35 left-1/2 transform -translate-x-1/2 mb-8">
+                            <CardStack cards={cardNameArrayToObjectArray(myCards)} direction="horizontal" />
+                        </div>
+                    </>
                 )}
 
                 {/* Discard Pile */}
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2">
                     
-                    <CardStack cards={cardNameArrayToObjectArray(gameInfo.discard_pile) || null} direction="horizontal" />
+                    <CardStack cards={getDiscardPileTop(gameInfo.discard_pile) || null} direction="horizontal" />
+                </div>
+
+                {/* Turn display */}
+                <div className="absolute top-2/3 left-1/2 transform -translate-x-1/2">
+                    <h2 className="text-xl">Turn: {gameInfo.currentPlayers[gameInfo.turn_index]}</h2>
                 </div>
 
             </div>
 
 
 
-            <div className="flex flex-col justify-center items-center min-h-screen">
+            <div className="flex flex-col justify-center items-center mt-10">
                 <button
                     className={`w-80 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-700`}
                     onClick={() => leaveGame()}>
