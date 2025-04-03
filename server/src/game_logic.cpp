@@ -134,6 +134,32 @@ std::string GameSession::draw_card(const std::string& player_id) {
     }
 }
 
+bool GameSession::check_game_over(std::string& winner, std::unordered_map<std::string, int>& final_scores) {
+    for (const auto& [player, hand] : hands) {
+        if (hand.empty()){
+            winner = player;
+
+            // calculate scores
+            int lowest = INT_MAX;
+            for (const auto& [p, h] : hands){
+                int score = 0;
+                for (const auto& card : h) {
+                    if (card.find("wild_plus4") != std::string::npos || card.find("wild") != std::string::npos) score += 50;
+                    else if (card.find("skip") != std::string::npos || card.find("reverse") != std::string::npos || card.find("plus2") != std::string::npos) score += 20;
+                    else {
+                        try {
+                            score += std::stoi(card.substr(card.find("_") + 1));
+                        } catch (...) {};
+                    }
+                }
+                final_scores[p] = score;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 // applies the effect of special UNO cards
 void GameSession::apply_card_effect(std::string player_id, std::string card) {
     // Skip card

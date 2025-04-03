@@ -51,6 +51,7 @@ export default function Card({ action, colour, digit, disableShadow = false, id,
 
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(message));
+            console.log('Socket sent... card played');
         }
 
         setShowColourPicker(false);

@@ -436,8 +436,30 @@ void game_thread_loop(const std::string& game_id) {
                     response["status"] = "invalid";
                 } else {
                     response["status"] = "ok";
-                    json updated = session.to_json();
-                    response["updated_game_state"] = updated;
+
+                    // check if game over
+                    std::string winner;
+                    std::unordered_map<std::string, int> final_scores;
+
+                    if (session.check_game_over(winner, final_scores)) {
+                        // game over, send game over response type
+                        response["type"] = "game_over";
+                        response["winner"] = winner;
+                        response["final_scores"] = final_scores;
+                        response["game_id"] = game_id;
+
+                        // mark game as inactive/complete, cleanup will happen on disconnect
+                        {
+                            std::lock_guard<std::mutex> lock(thread_control_mutex);
+                            game_thread_running[game_id] = false;
+                        }
+
+                        game_queue_cvs[game_id].notify_one();
+                    } else {
+                        // normal game state response
+                        json updated = session.to_json();
+                        response["updated_game_state"] = updated;
+                    }                    
                 }
 
             } else if (type == "draw_card") {
