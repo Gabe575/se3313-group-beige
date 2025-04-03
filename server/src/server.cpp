@@ -454,9 +454,8 @@ void game_thread_loop(const std::string& game_id) {
                 }
 
             } else if (type == "get_game_state") {
-                response["type"] = "game_state";
-                response["game_id"] = game_id;
                 response = session.to_json();
+                response["type"] = "game_state";
                 response["status"] = "ok";
 
             } else if (type == "get_player_hand") {
