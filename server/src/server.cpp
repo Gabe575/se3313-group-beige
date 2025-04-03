@@ -370,6 +370,10 @@ void on_close(crow::websocket::connection& conn, const std::string& reason, uint
                 // Notify game thread to exit
                 game_queue_cvs[to_erase].notify_one();
 
+                if (game_threads[to_erase].joinable()) {
+                    game_threads[to_erase].join();  // Ensure the thread finishes properly
+                }
+
                 // Erase game session
                 it = game_sessions.erase(it);
 
