@@ -427,6 +427,8 @@ void game_thread_loop(const std::string& game_id) {
 
             // Handle message types
             if (type == "play_card") {
+                std::cout << "Playing card on game thread loop..." << std::endl;
+                std::cout << msg << std::endl;
                 std::string card = msg["card"];
                 std::string chosen_color = msg.value("colour", ""); // optional based on wild card
 
@@ -445,7 +447,9 @@ void game_thread_loop(const std::string& game_id) {
                     std::string winner;
                     std::unordered_map<std::string, int> final_scores;
 
+                    std::cout << "Checking if game is over" << std::endl;
                     if (session.check_game_over(winner, final_scores)) {
+                        std::cout << "Game over..." << std::endl;
                         // game over, send game over response type
                         response["type"] = "game_over";
                         response["winner"] = winner;
@@ -460,6 +464,7 @@ void game_thread_loop(const std::string& game_id) {
 
                         game_queue_cvs[game_id].notify_one();
                     } else {
+                        std::cout << "Updating game state, game is not over yet" << std::endl;
                         // normal game state response
                         json updated = session.to_json();
                         response["updated_game_state"] = updated;
