@@ -72,10 +72,11 @@ void GameSession::add_player(std::string player_id) {
         // deal 7 cards to new player
         for (int i = 0; i < 7; i++) {
             if (!deck.empty()) {
-                draw_card(player_id);
+                draw_card_unchecked(player_id);
             }
 
         }
+        has_drawn[player_id] = false;
     }
 }
 
@@ -124,13 +125,33 @@ bool GameSession::play_card(std::string player_id, std::string card, std::string
        
     // apply special card effects
     apply_card_effect(player_id, card);
+    for (auto& [player, drawn] : has_drawn) {
+        drawn = false; // reset draw tracker after successful play
+    }
     return true;
 }
 
 // draw a card from the deck
 std::string GameSession::draw_card(const std::string& player_id) {
-    
+
+    // check if its your turn
+    if (player_id != players[current_turn]) return ""; // not your turn
+    if (has_drawn[player_id]) return ""; // already drew
+
     if (!deck.empty()) {
+        std::string drawn_card = deck.back();
+        deck.pop_back();
+        hands[player_id].push_back(drawn_card);
+        has_drawn[player_id] = true;
+        return drawn_card;
+    } else {
+        return "";
+    }
+}
+
+// draw card unchecked (used for dealing cards at start of game)
+std::string GameSession::draw_card_unchecked(const std::string& player_id){
+    if (!deck.empty()){
         std::string drawn_card = deck.back();
         deck.pop_back();
         hands[player_id].push_back(drawn_card);
@@ -191,7 +212,7 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         std::cout << "Draw Two card played! Next player draws 2 cards." << std::endl;
         int next_player = (current_turn + 1) % players.size();
         for (int i = 0; i < 2; i++) {
-            draw_card(players[next_player]);
+            draw_card_unchecked(players[next_player]);
         }
         current_turn = (current_turn + 2) % players.size();
     } 
@@ -200,7 +221,7 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         std::cout << "Wild Draw Four card played! Next player draws 4." << std::endl;
         int next_player = (current_turn + 1) % players.size();
         for (int i = 0; i < 4; i++) {
-            draw_card(players[next_player]);
+            draw_card_unchecked(players[next_player]);
         }
         
         std::cout << "Waiting for " << player_id << " to choose a color..." << std::endl;

@@ -466,8 +466,28 @@ void game_thread_loop(const std::string& game_id) {
                     } else {
                         std::cout << "Updating game state, game is not over yet" << std::endl;
                         // normal game state response
-                        json updated = session.to_json();
-                        response["updated_game_state"] = updated;
+                        //json updated = session.to_json();
+                        //response["updated_game_state"] = updated;
+
+                        json gameStateResponse;
+
+                        gameStateResponse["game_id"] = game_id;
+                        gameStateResponse["currentPlayers"] = session.players;
+                        gameStateResponse["host"] = session.players.empty() ? "" : session.players.front();
+                        gameStateResponse["status"] = "ok";
+                        // To tell the players polling for game_info that the game has started
+                        gameStateResponse["game_started"] = session.game_started;
+                        gameStateResponse["discard_pile"] = session.discard_pile;
+                        json player_hands = json::object();
+                        for (const auto &[player, hand] : session.hands)
+                        {
+                            player_hands[player] = hand.size();
+                        }
+                        gameStateResponse["turn_index"] = session.current_turn;
+                        gameStateResponse["player_hands"] = player_hands;
+
+                        response["updated_game_state"] = gameStateResponse;
+
                     }                    
                 }
 
@@ -479,9 +499,32 @@ void game_thread_loop(const std::string& game_id) {
                     response["status"] = "not_found";
                 } else {
                     std::string drawn = session.draw_card(player);
-                    response["card"] = drawn;
-                    response["status"] = "ok";
-                    response["updated_game_state"] = session.to_json();
+                    if (drawn.empty()){
+                        response["status"] = "invalid"; // not your turn or already drew
+                    } else {
+                        response["card"] = drawn;
+                        response["status"] = "ok";
+                        //response["updated_game_state"] = session.to_json();
+
+                        json gameStateResponse;
+
+                        gameStateResponse["game_id"] = game_id;
+                        gameStateResponse["currentPlayers"] = session.players;
+                        gameStateResponse["host"] = session.players.empty() ? "" : session.players.front();
+                        gameStateResponse["status"] = "ok";
+                        // To tell the players polling for game_info that the game has started
+                        gameStateResponse["game_started"] = session.game_started;
+                        gameStateResponse["discard_pile"] = session.discard_pile;
+                        json player_hands = json::object();
+                        for (const auto &[player, hand] : session.hands)
+                        {
+                            player_hands[player] = hand.size();
+                        }
+                        gameStateResponse["turn_index"] = session.current_turn;
+                        gameStateResponse["player_hands"] = player_hands;
+
+                        response["updated_game_state"] = gameStateResponse;
+                    }
                 }
 
             } else if (type == "get_game_state") {
@@ -543,7 +586,26 @@ void game_thread_loop(const std::string& game_id) {
                     }
                     break; // End thread
                 } else {
-                    response["updated_game_state"] = session.to_json();
+                    //response["updated_game_state"] = session.to_json();
+
+                    json gameStateResponse;
+
+                    gameStateResponse["game_id"] = game_id;
+                    gameStateResponse["currentPlayers"] = session.players;
+                    gameStateResponse["host"] = session.players.empty() ? "" : session.players.front();
+                    gameStateResponse["status"] = "ok";
+                    // To tell the players polling for game_info that the game has started
+                    gameStateResponse["game_started"] = session.game_started;
+                    gameStateResponse["discard_pile"] = session.discard_pile;
+                    json player_hands = json::object();
+                    for (const auto &[player, hand] : session.hands)
+                    {
+                        player_hands[player] = hand.size();
+                    }
+                    gameStateResponse["turn_index"] = session.current_turn;
+                    gameStateResponse["player_hands"] = player_hands;
+
+                    response["updated_game_state"] = gameStateResponse;
                 }
             }
 
