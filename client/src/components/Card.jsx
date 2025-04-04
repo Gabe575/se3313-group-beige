@@ -28,6 +28,7 @@ export default function Card({ action, colour, digit, disableShadow = false, id,
                 player_name: sessionStorage.getItem("name")
             };
             if (socket && socket.readyState === WebSocket.OPEN){
+                console.log(JSON.stringify(message))
                 socket.send(JSON.stringify(message));
             }
             return;

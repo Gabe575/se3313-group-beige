@@ -93,7 +93,11 @@ export default function Game() {
                         alert("You can only draw once per turn and only on your turn!");
                     } else {
                         console.log(`${data.player_name} drew a card.`);
-                        setGameInfo(data.updated_game_state);
+                        setGameInfo(data.updated_game_state); // Crashes here. Blank white screen
+                        // Adding this for potential fix
+                        if (data.player_name === sessionStorage.getItem("name")) {
+                            sendGetMyCardsInfo();
+                        }
                     }
                 }
 

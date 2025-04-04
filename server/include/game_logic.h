@@ -56,6 +56,7 @@ public:
     bool play_card(std::string player_id, std::string card, std::string chosen_color = "");
 
     std::string draw_card(const std::string& player_id);
+    std::string draw_card_unchecked(const std::string& player_id);
 
     bool check_game_over(std::string& winner, std::unordered_map<std::string, int>& final_scores);
 
