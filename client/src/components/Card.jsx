@@ -16,14 +16,20 @@ export default function Card({ action, colour, digit, disableShadow = false, id,
             console.log('card drawn')
 
             // Player clicked on draw card
-
             // Check that it's their turn
-
             // Check that they havent already drawn a card this turn
 
+            // *** ALL OF ABOVE WAS DONE ON BACKEND IN GAME LOGIC
+
             // Send draw_card
-
-
+            const message = {
+                type: "draw_card",
+                game_id: game,
+                player_name: sessionStorage.getItem("name")
+            };
+            if (socket && socket.readyState === WebSocket.OPEN){
+                socket.send(JSON.stringify(message));
+            }
             return;
         }
 

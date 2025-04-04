@@ -479,9 +479,13 @@ void game_thread_loop(const std::string& game_id) {
                     response["status"] = "not_found";
                 } else {
                     std::string drawn = session.draw_card(player);
-                    response["card"] = drawn;
-                    response["status"] = "ok";
-                    response["updated_game_state"] = session.to_json();
+                    if (drawn.empty()){
+                        response["status"] = "invalid"; // not your turn or already drew
+                    } else {
+                        response["card"] = drawn;
+                        response["status"] = "ok";
+                        response["updated_game_state"] = session.to_json();    
+                    }
                 }
 
             } else if (type == "get_game_state") {

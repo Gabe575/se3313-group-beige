@@ -76,6 +76,7 @@ void GameSession::add_player(std::string player_id) {
             }
 
         }
+        has_drawn[player_id] = false;
     }
 }
 
@@ -124,16 +125,24 @@ bool GameSession::play_card(std::string player_id, std::string card, std::string
        
     // apply special card effects
     apply_card_effect(player_id, card);
+    for (auto& [player, drawn] : has_drawn) {
+        drawn = false; // reset draw tracker after successful play
+    }
     return true;
 }
 
 // draw a card from the deck
 std::string GameSession::draw_card(const std::string& player_id) {
-    
+
+    // check if its your turn
+    if (player_id != players[current_turn]) return ""; // not your turn
+    if (has_drawn[player_id]) return ""; // already drew
+
     if (!deck.empty()) {
         std::string drawn_card = deck.back();
         deck.pop_back();
         hands[player_id].push_back(drawn_card);
+        has_drawn[player_id] = true;
         return drawn_card;
     } else {
         return "";

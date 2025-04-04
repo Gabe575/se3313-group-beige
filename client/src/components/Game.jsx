@@ -88,6 +88,15 @@ export default function Game() {
 
                 }
 
+                if (data.type === 'card_drawn') {
+                    if (data.status === "invalid"){
+                        alert("You can only draw once per turn and only on your turn!");
+                    } else {
+                        console.log(`${data.player_name} drew a card.`);
+                        setGameInfo(data.updated_game_state);
+                    }
+                }
+
                 if (data.type === "special_card_played") {
                     console.log(`${data.player_name} played special card ${data.card.value}`);
                     setGameInfo(data.updated_game_state);
