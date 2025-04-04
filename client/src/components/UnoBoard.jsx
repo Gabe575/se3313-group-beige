@@ -285,14 +285,30 @@ export default function UnoBoard({ gameInfo, myCards }) {
             </div>
 
 
-            <div className="flex flex-col justify-center items-center mt-10">
+            <div className="flex flex-col justify-center items-center m-10">
                 <button
                     className={`w-80 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-700`}
                     onClick={() => leaveGame()}>
                     Leave game
                 </button>
             </div>
+            
+            
+            {gameInfo.wild_color && (
+                <div className="absolute top-14/32 left-18/32 transform -translate-x-1/2 mt-2 p-2 bg-white shadow-lg rounded-md flex space-x-2">
+                    <button
+                        className={`w-8 h-8 rounded-full border-2 border-black`}
+                        style={{ backgroundColor: gameInfo.wild_color }}
+                    />
+                </div>
+            )}
 
         </>
     );
 }
+
+/*
+<div className="flex flex-col justify-center items-center mt-10">
+                    <h2 className="text-xl">Wild Color: {gameInfo.wild_color}</h2>
+                </div>
+*/
