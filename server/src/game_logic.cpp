@@ -1,7 +1,7 @@
 #include "game_logic.h"
 #include <iostream>
 #include <random>
-
+#include <climits>
 GameSession::GameSession() : game_id(""), host(""), current_turn(0), wild_color("") {}
 
 // initialize game session with a given game ID
