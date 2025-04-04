@@ -71,6 +71,12 @@ export default function Game() {
                         return navigate('/');
                     }
 
+                    if (data.winner != "" && data.winner != null) {
+                        alert(`Player ${data.winner}, has won the game! Returning to menu.`);
+                        navigate('/');
+                    }
+
+
                 }
 
                 if (data.type === "player_hand") {

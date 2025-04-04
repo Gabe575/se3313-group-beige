@@ -24,6 +24,7 @@ public:
     int current_turn = 0; // index of player whose turn it is
     bool game_started = false;
     std::unordered_map<std::string, bool> has_drawn;
+    std::string winner = "";
 
     std::string wild_color = "";
 
@@ -72,6 +73,8 @@ public:
      * @return A JSON object containing the game state.
      */
     json to_json();
+
+    void skip_turn();
 };
 
 #endif

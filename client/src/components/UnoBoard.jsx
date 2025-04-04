@@ -33,7 +33,6 @@ export default function UnoBoard({ gameInfo, myCards }) {
                 socket.send(
                     JSON.stringify({ type: "skip_turn", game_id: gameId, player_name: sessionStorage.getItem('name') })
                 );
-                navigate(`/`);
             }
         }
     }
