@@ -128,6 +128,12 @@ bool GameSession::play_card(std::string player_id, std::string card, std::string
     for (auto& [player, drawn] : has_drawn) {
         drawn = false; // reset draw tracker after successful play
     }
+
+    // Double check the next player is allowed to draw a card
+    for (auto& [player, drawn] : has_drawn) {
+        drawn = false; // Reset draw tracker at the start of each player's turn
+    }
+
     return true;
 }
 
@@ -237,6 +243,12 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
     else {
         current_turn = (current_turn + 1) % players.size();
     }
+}
+
+void GameSession::skip_turn() {
+    current_turn = (current_turn + 1) % players.size();
+    // Reset drawn status for the new current player
+    has_drawn[players[current_turn]] = false;
 }
 
 // convert game session to a json object

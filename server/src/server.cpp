@@ -217,6 +217,8 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
             }
             response["turn_index"] = session.current_turn;
             response["player_hands"] = player_hands;
+
+            response["winner"] = session.winner;
         }
         conn.send_text(response.dump());
     }
@@ -308,6 +310,16 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
     }
 
     else if (type == "player_disconnected") {
+        std::string game_id = received["game_id"];
+        received["connection_ptr"] = reinterpret_cast<uintptr_t>(&conn);
+        {
+            std::lock_guard<std::mutex> lock(game_queue_mutexes[game_id]);
+            incoming_game_queues[game_id].push(received);
+        }
+        game_queue_cvs[game_id].notify_one();
+        return;
+    }
+    else if (type == "skip_turn") {
         std::string game_id = received["game_id"];
         received["connection_ptr"] = reinterpret_cast<uintptr_t>(&conn);
         {
@@ -456,6 +468,9 @@ void game_thread_loop(const std::string& game_id) {
                         response["final_scores"] = final_scores;
                         response["game_id"] = game_id;
 
+                        // Set session winner
+                        session.winner = winner;
+
                         // mark game as inactive/complete, cleanup will happen on disconnect
                         {
                             std::lock_guard<std::mutex> lock(thread_control_mutex);
@@ -526,6 +541,20 @@ void game_thread_loop(const std::string& game_id) {
                         response["updated_game_state"] = gameStateResponse;
                     }
                 }
+            
+            } else if (type == "skip_turn") {
+
+                // Add 1 to the turn index
+
+                session.skip_turn();
+
+                // No response? Since Game state will just update and tell all the players that it's the next players turn
+
+                // Yes response just for consistency
+                response["type"] = "turn_skipped";
+                response["player_name"] = player;
+                response["status"] = "ok";
+            
 
             } else if (type == "get_game_state") {
                 response = session.to_json();
