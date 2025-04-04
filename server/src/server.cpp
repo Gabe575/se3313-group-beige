@@ -217,6 +217,8 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
             }
             response["turn_index"] = session.current_turn;
             response["player_hands"] = player_hands;
+
+            response["winner"] = session.winner;
         }
         conn.send_text(response.dump());
     }
@@ -317,6 +319,16 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
         game_queue_cvs[game_id].notify_one();
         return;
     }
+    else if (type == "skip_turn") {
+        std::string game_id = received["game_id"];
+        received["connection_ptr"] = reinterpret_cast<uintptr_t>(&conn);
+        {
+            std::lock_guard<std::mutex> lock(game_queue_mutexes[game_id]);
+            incoming_game_queues[game_id].push(received);
+        }
+        game_queue_cvs[game_id].notify_one();
+        return;
+    }
 }
 
 void on_open(crow::websocket::connection& conn) {
@@ -369,6 +381,10 @@ void on_close(crow::websocket::connection& conn, const std::string& reason, uint
 
                 // Notify game thread to exit
                 game_queue_cvs[to_erase].notify_one();
+
+                if (game_threads[to_erase].joinable()) {
+                    game_threads[to_erase].join();  // Ensure the thread finishes properly
+                }
 
                 // Erase game session
                 it = game_sessions.erase(it);
@@ -423,19 +439,71 @@ void game_thread_loop(const std::string& game_id) {
 
             // Handle message types
             if (type == "play_card") {
+                std::cout << "Playing card on game thread loop..." << std::endl;
+                std::cout << msg << std::endl;
                 std::string card = msg["card"];
+                std::string chosen_color = msg.value("colour", ""); // optional based on wild card
+
                 response["type"] = "card_played";
                 response["player_name"] = player;
                 response["card"] = card;
 
                 if (!session.hands.count(player)) {
                     response["status"] = "not_found";
-                } else if (!session.play_card(player, card)) {
+                } else if (!session.play_card(player, card, chosen_color)) {
                     response["status"] = "invalid";
                 } else {
                     response["status"] = "ok";
-                    json updated = session.to_json();
-                    response["updated_game_state"] = updated;
+
+                    // check if game over
+                    std::string winner;
+                    std::unordered_map<std::string, int> final_scores;
+
+                    std::cout << "Checking if game is over" << std::endl;
+                    if (session.check_game_over(winner, final_scores)) {
+                        std::cout << "Game over..." << std::endl;
+                        // game over, send game over response type
+                        response["type"] = "game_over";
+                        response["winner"] = winner;
+                        response["final_scores"] = final_scores;
+                        response["game_id"] = game_id;
+
+                        // Set session winner
+                        session.winner = winner;
+
+                        // mark game as inactive/complete, cleanup will happen on disconnect
+                        {
+                            std::lock_guard<std::mutex> lock(thread_control_mutex);
+                            game_thread_running[game_id] = false;
+                        }
+
+                        game_queue_cvs[game_id].notify_one();
+                    } else {
+                        std::cout << "Updating game state, game is not over yet" << std::endl;
+                        // normal game state response
+                        //json updated = session.to_json();
+                        //response["updated_game_state"] = updated;
+
+                        json gameStateResponse;
+
+                        gameStateResponse["game_id"] = game_id;
+                        gameStateResponse["currentPlayers"] = session.players;
+                        gameStateResponse["host"] = session.players.empty() ? "" : session.players.front();
+                        gameStateResponse["status"] = "ok";
+                        // To tell the players polling for game_info that the game has started
+                        gameStateResponse["game_started"] = session.game_started;
+                        gameStateResponse["discard_pile"] = session.discard_pile;
+                        json player_hands = json::object();
+                        for (const auto &[player, hand] : session.hands)
+                        {
+                            player_hands[player] = hand.size();
+                        }
+                        gameStateResponse["turn_index"] = session.current_turn;
+                        gameStateResponse["player_hands"] = player_hands;
+
+                        response["updated_game_state"] = gameStateResponse;
+
+                    }                    
                 }
 
             } else if (type == "draw_card") {
@@ -446,15 +514,51 @@ void game_thread_loop(const std::string& game_id) {
                     response["status"] = "not_found";
                 } else {
                     std::string drawn = session.draw_card(player);
-                    response["card"] = drawn;
-                    response["status"] = "ok";
-                    response["updated_game_state"] = session.to_json();
+                    if (drawn.empty()){
+                        response["status"] = "invalid"; // not your turn or already drew
+                    } else {
+                        response["card"] = drawn;
+                        response["status"] = "ok";
+                        //response["updated_game_state"] = session.to_json();
+
+                        json gameStateResponse;
+
+                        gameStateResponse["game_id"] = game_id;
+                        gameStateResponse["currentPlayers"] = session.players;
+                        gameStateResponse["host"] = session.players.empty() ? "" : session.players.front();
+                        gameStateResponse["status"] = "ok";
+                        // To tell the players polling for game_info that the game has started
+                        gameStateResponse["game_started"] = session.game_started;
+                        gameStateResponse["discard_pile"] = session.discard_pile;
+                        json player_hands = json::object();
+                        for (const auto &[player, hand] : session.hands)
+                        {
+                            player_hands[player] = hand.size();
+                        }
+                        gameStateResponse["turn_index"] = session.current_turn;
+                        gameStateResponse["player_hands"] = player_hands;
+
+                        response["updated_game_state"] = gameStateResponse;
+                    }
                 }
+            
+            } else if (type == "skip_turn") {
+
+                // Add 1 to the turn index
+
+                session.skip_turn();
+
+                // No response? Since Game state will just update and tell all the players that it's the next players turn
+
+                // Yes response just for consistency
+                response["type"] = "turn_skipped";
+                response["player_name"] = player;
+                response["status"] = "ok";
+            
 
             } else if (type == "get_game_state") {
-                response["type"] = "game_state";
-                response["game_id"] = game_id;
                 response = session.to_json();
+                response["type"] = "game_state";
                 response["status"] = "ok";
 
             } else if (type == "get_player_hand") {
@@ -511,7 +615,26 @@ void game_thread_loop(const std::string& game_id) {
                     }
                     break; // End thread
                 } else {
-                    response["updated_game_state"] = session.to_json();
+                    //response["updated_game_state"] = session.to_json();
+
+                    json gameStateResponse;
+
+                    gameStateResponse["game_id"] = game_id;
+                    gameStateResponse["currentPlayers"] = session.players;
+                    gameStateResponse["host"] = session.players.empty() ? "" : session.players.front();
+                    gameStateResponse["status"] = "ok";
+                    // To tell the players polling for game_info that the game has started
+                    gameStateResponse["game_started"] = session.game_started;
+                    gameStateResponse["discard_pile"] = session.discard_pile;
+                    json player_hands = json::object();
+                    for (const auto &[player, hand] : session.hands)
+                    {
+                        player_hands[player] = hand.size();
+                    }
+                    gameStateResponse["turn_index"] = session.current_turn;
+                    gameStateResponse["player_hands"] = player_hands;
+
+                    response["updated_game_state"] = gameStateResponse;
                 }
             }
 

@@ -51,6 +51,8 @@ TEST_F(GameLogicTest, SkipCardSkipsNextPlayer) {
     game.add_player("player2");
     game.add_player("player3");
 
+    game.discard_pile = { "red_7" };
+
     std::string skip_card = "red_skip";
     game.hands["player1"] = {skip_card};
 
@@ -64,6 +66,8 @@ TEST_F(GameLogicTest, ReverseCardReversesOrder) {
     game.add_player("player1");
     game.add_player("player2");
     game.add_player("player3");
+
+    game.discard_pile = { "red_7" }; // ensure card is playable
 
     std::string reverse_card = "red_reverse";
     game.hands["player1"] = {reverse_card};
@@ -80,6 +84,9 @@ TEST_F(GameLogicTest, ReverseCardSetsNextPlayerCorrectly) {
     game.add_player("player1");
     game.add_player("player2");
     game.add_player("player3");
+
+    game.discard_pile = { "red_7" }; // ensure card is playable
+
 
     std::string reverse_card = "red_reverse";
     game.hands["player2"] = {reverse_card};
@@ -100,6 +107,7 @@ TEST_F(GameLogicTest, DrawTwoCardNextPlayerDrawsTwo) {
     std::string draw_two = "red_plus2";
     game.hands["player1"] = {draw_two};
     int original_hand_size = game.to_json()["hands"]["player2"].size();
+    game.discard_pile = { "red_7" }; // ensure card is playable
 
     EXPECT_TRUE(game.play_card("player1", draw_two));
     EXPECT_EQ(game.to_json()["hands"]["player2"].size(), original_hand_size + 2);
@@ -110,7 +118,7 @@ TEST_F(GameLogicTest, WildCardPlaysSuccessfully) {
     std::string wild = "wild";
     game.hands["player1"] = {wild};
 
-    EXPECT_TRUE(game.play_card("player1", wild));
+    EXPECT_TRUE(game.play_card("player1", wild, "red"));
     EXPECT_EQ(game.to_json()["discard_pile"].back(), wild);
 }
 
@@ -120,7 +128,7 @@ TEST_F(GameLogicTest, WildDrawFourMakesNextDrawFour) {
     game.hands["player1"] = {wild4};
     int original_hand_size = game.to_json()["hands"]["player2"].size();
 
-    EXPECT_TRUE(game.play_card("player1", wild4));
+    EXPECT_TRUE(game.play_card("player1", wild4, "red"));
     EXPECT_EQ(game.to_json()["hands"]["player2"].size(), original_hand_size + 4);
 }
 
@@ -138,6 +146,9 @@ TEST_F(GameLogicTest, CallUNOWhenOneCardLeft) {
     std::string card2 = "green_2";
     game.hands["player1"] = {card1,card2};
 
+    game.discard_pile = { "blue_7" }; // ensure card1 is playable
+
+
     // simulate playing one card, leaving player1 with one
     EXPECT_TRUE(game.play_card("player1", card1));
     EXPECT_EQ(game.hands["player1"].size(), 1);
@@ -150,6 +161,8 @@ TEST_F(GameLogicTest, WinnerHasZeroCardsAndLowestScore) {
     game = GameSession("test_game");
     game.add_player("winner");
     game.add_player("loser");
+    game.discard_pile = { "green_0" }; // ensure card is playable
+
 
     std::string winning_card = "green_7";
     game.hands["winner"] = { winning_card };
@@ -186,6 +199,35 @@ TEST_F(GameLogicTest, WinnerHasZeroCardsAndLowestScore) {
 
     EXPECT_EQ(winner_id, "winner");
     EXPECT_EQ(scores["loser"], 25); // 5 + 20 (skip)
+}
+
+TEST_F(GameLogicTest, WildCardSetsChosenColor) {
+    game = GameSession("test_game");
+    game.add_player("player1");
+    game.add_player("player2");
+
+    game.hands["player1"] = { "wild" };
+
+    // Play wild card with chosen color "blue"
+    EXPECT_TRUE(game.play_card("player1", "wild", "blue"));
+    EXPECT_EQ(game.wild_color, "blue");  // Check that the color is stored
+    EXPECT_EQ(game.to_json()["discard_pile"].back(), "wild");
+
+    // Give player2 a matching blue card and an invalid red card
+    game.hands["player2"] = { "blue_5", "red_7" };
+
+    // Valid blue card should succeed
+    EXPECT_TRUE(game.play_card("player2", "blue_5"));
+    EXPECT_EQ(game.wild_color, ""); // wild_color should reset after non-wild card
+
+    // Reassign player1 a new wild card to repeat test
+    game.hands["player1"] = { "wild" };
+    EXPECT_TRUE(game.play_card("player1", "wild", "green"));
+    EXPECT_EQ(game.wild_color, "green");
+
+    // Now player2 tries to play red_7 again (wrong color)
+    game.hands["player2"] = { "red_7" };
+    EXPECT_FALSE(game.play_card("player2", "red_7")); // should fail
 }
 
 // Add this main() if you're not linking gtest_main

@@ -23,8 +23,9 @@ public:
     std::vector<std::string> discard_pile; // pile where played cards go
     int current_turn = 0; // index of player whose turn it is
     bool game_started = false;
+    std::unordered_map<std::string, bool> has_drawn;
+    std::string winner = "";
 
-    std::string pending_wild_choice = "";
     std::string wild_color = "";
 
     GameSession();
@@ -50,11 +51,15 @@ public:
      * @brief Handles playing a card from a player's hand.
      * @param player_id The player attempting to play a card.
      * @param card The card being played.
+     * @param chosen_colour The chosen wild card color if a wild card is played.
      * @return True if the move was valid, false otherwise.
      */
-    bool play_card(std::string player_id, std::string card);
+    bool play_card(std::string player_id, std::string card, std::string chosen_color = "");
 
     std::string draw_card(const std::string& player_id);
+    std::string draw_card_unchecked(const std::string& player_id);
+
+    bool check_game_over(std::string& winner, std::unordered_map<std::string, int>& final_scores);
 
     /**
      * @brief Applies special effects of action cards (Skip, Reverse, Draw Two, Wild, etc.).
@@ -68,6 +73,8 @@ public:
      * @return A JSON object containing the game state.
      */
     json to_json();
+
+    void skip_turn();
 };
 
 #endif

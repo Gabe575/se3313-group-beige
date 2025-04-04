@@ -64,6 +64,19 @@ export default function Game() {
                     if (!data.game_started) {
                         navigate(`/lobby/${data.game_id}`);
                     }
+
+                    // If there's 1 player exit
+                    if (data.currentPlayers.length < 2) {
+                        alert("Other players left. Returning to menu.");
+                        return navigate('/');
+                    }
+
+                    if (data.winner != "" && data.winner != null) {
+                        alert(`Player ${data.winner}, has won the game! Returning to menu.`);
+                        navigate('/');
+                    }
+
+
                 }
 
                 if (data.type === "player_hand") {
@@ -79,6 +92,19 @@ export default function Game() {
 
                     setMyHand(data.hand);
 
+                }
+
+                if (data.type === 'card_drawn') {
+                    if (data.status === "invalid"){
+                        alert("You can only draw once per turn and only on your turn!");
+                    } else {
+                        console.log(`${data.player_name} drew a card.`);
+                        setGameInfo(data.updated_game_state); // Crashes here. Blank white screen
+                        // Adding this for potential fix
+                        if (data.player_name === sessionStorage.getItem("name")) {
+                            sendGetMyCardsInfo();
+                        }
+                    }
                 }
 
                 if (data.type === "special_card_played") {

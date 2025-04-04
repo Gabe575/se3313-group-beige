@@ -2,7 +2,7 @@
 #include <iostream>
 #include <random>
 
-GameSession::GameSession() : game_id(""), host(""), current_turn(0), pending_wild_choice(""), wild_color("") {}
+GameSession::GameSession() : game_id(""), host(""), current_turn(0), wild_color("") {}
 
 // initialize game session with a given game ID
 GameSession::GameSession(std::string id) : game_id(id) {
@@ -46,8 +46,14 @@ void GameSession::initialize_deck() {
     // randomly shuffle deck
     std::shuffle(deck.begin(), deck.end(), rng);
 
+    while (!deck.empty() && 
+           (deck.back() == "wild" || deck.back() == "wild_plus4")) {
+        std::shuffle(deck.begin(), deck.end(), rng); // Reshuffle to avoid wild cards starting
+    }
+
     // Set initial discard card
-    discard_pile.push_back(deck.back()); 
+    discard_pile.push_back(deck.back());
+
     deck.pop_back();
 }
 
@@ -66,15 +72,16 @@ void GameSession::add_player(std::string player_id) {
         // deal 7 cards to new player
         for (int i = 0; i < 7; i++) {
             if (!deck.empty()) {
-                draw_card(player_id);
+                draw_card_unchecked(player_id);
             }
 
         }
+        has_drawn[player_id] = false;
     }
 }
 
 // handles playing a card. Returns true if successful, false if invalid
-bool GameSession::play_card(std::string player_id, std::string card) {
+bool GameSession::play_card(std::string player_id, std::string card, std::string chosen_color) {
     // Check if it's the player's turn
     if (player_id != players[current_turn]) return false;
     
@@ -93,11 +100,21 @@ bool GameSession::play_card(std::string player_id, std::string card) {
     std::string top_color = top_card.substr(0, top_card.find('_'));
     std::string top_value = top_card.substr(top_card.find('_') + 1);
 
-    // Check if the card is playable (matching color, value, or wild)
-    if (!(played_color == "wild" || played_color == "wild_plus4" || played_color == top_color || played_value == top_value)) {
-        return false;
+    // Wild card always playable, but must include color
+    if (card.find("wild") == 0) {
+        if (chosen_color.empty()) return false; // need a chosen color
+        wild_color = chosen_color; // set wild color
+        std::cout << player_id << " chose wild color: " << wild_color << std::endl;
+    } else {
+        // if last card was a wild, compare to chosen color
+        if (!wild_color.empty()) {
+            if (played_color != wild_color) return false;
+        } else {
+            // last card was not a wild, so you need to match number or color
+            if (played_color != top_color && played_value != top_value) return false;
+        }
+        wild_color = ""; // clear wild card color if not wild card
     }
-    
 
     // announce the move
     std::cout << player_id << " played " << card << std::endl;
@@ -108,13 +125,39 @@ bool GameSession::play_card(std::string player_id, std::string card) {
        
     // apply special card effects
     apply_card_effect(player_id, card);
+    for (auto& [player, drawn] : has_drawn) {
+        drawn = false; // reset draw tracker after successful play
+    }
+
+    // Double check the next player is allowed to draw a card
+    for (auto& [player, drawn] : has_drawn) {
+        drawn = false; // Reset draw tracker at the start of each player's turn
+    }
+
     return true;
 }
 
 // draw a card from the deck
 std::string GameSession::draw_card(const std::string& player_id) {
-    
+
+    // check if its your turn
+    if (player_id != players[current_turn]) return ""; // not your turn
+    if (has_drawn[player_id]) return ""; // already drew
+
     if (!deck.empty()) {
+        std::string drawn_card = deck.back();
+        deck.pop_back();
+        hands[player_id].push_back(drawn_card);
+        has_drawn[player_id] = true;
+        return drawn_card;
+    } else {
+        return "";
+    }
+}
+
+// draw card unchecked (used for dealing cards at start of game)
+std::string GameSession::draw_card_unchecked(const std::string& player_id){
+    if (!deck.empty()){
         std::string drawn_card = deck.back();
         deck.pop_back();
         hands[player_id].push_back(drawn_card);
@@ -122,6 +165,32 @@ std::string GameSession::draw_card(const std::string& player_id) {
     } else {
         return "";
     }
+}
+
+bool GameSession::check_game_over(std::string& winner, std::unordered_map<std::string, int>& final_scores) {
+    for (const auto& [player, hand] : hands) {
+        if (hand.empty()){
+            winner = player;
+
+            // calculate scores
+            int lowest = INT_MAX;
+            for (const auto& [p, h] : hands){
+                int score = 0;
+                for (const auto& card : h) {
+                    if (card.find("wild_plus4") != std::string::npos || card.find("wild") != std::string::npos) score += 50;
+                    else if (card.find("skip") != std::string::npos || card.find("reverse") != std::string::npos || card.find("plus2") != std::string::npos) score += 20;
+                    else {
+                        try {
+                            score += std::stoi(card.substr(card.find("_") + 1));
+                        } catch (...) {};
+                    }
+                }
+                final_scores[p] = score;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 // applies the effect of special UNO cards
@@ -149,7 +218,7 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         std::cout << "Draw Two card played! Next player draws 2 cards." << std::endl;
         int next_player = (current_turn + 1) % players.size();
         for (int i = 0; i < 2; i++) {
-            draw_card(players[next_player]);
+            draw_card_unchecked(players[next_player]);
         }
         current_turn = (current_turn + 2) % players.size();
     } 
@@ -158,26 +227,28 @@ void GameSession::apply_card_effect(std::string player_id, std::string card) {
         std::cout << "Wild Draw Four card played! Next player draws 4." << std::endl;
         int next_player = (current_turn + 1) % players.size();
         for (int i = 0; i < 4; i++) {
-            draw_card(players[next_player]);
+            draw_card_unchecked(players[next_player]);
         }
         
         std::cout << "Waiting for " << player_id << " to choose a color..." << std::endl;
-        //pending_wild_choice = player_id; // Track player needing to select a color
-        //wild_color = ""; // Reset wild color
         current_turn = (current_turn + 2) % players.size();
     } 
     // Wild Card
     else if (card.find("wild") != std::string::npos) {
         std::cout << "Wild card played! Waiting for " << player_id << " to choose a color..." << std::endl;
         
-        // Ask the player to select a color
-        //pending_wild_choice = player_id; // Track the player who must choose
-        //wild_color = ""; // Reset wild color until the player selects one
+        current_turn = (current_turn + 1) % players.size();
     } 
     // Regular card, do nothing
     else {
         current_turn = (current_turn + 1) % players.size();
     }
+}
+
+void GameSession::skip_turn() {
+    current_turn = (current_turn + 1) % players.size();
+    // Reset drawn status for the new current player
+    has_drawn[players[current_turn]] = false;
 }
 
 // convert game session to a json object
@@ -189,6 +260,7 @@ json GameSession::to_json() {
         {"top_card", discard_pile.back()},
         {"hands", hands},
         {"discard_pile", discard_pile},
-        {"game_started", game_started}
+        {"game_started", game_started},
+        {"wild_color", wild_color}
     };
 }
