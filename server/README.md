@@ -71,3 +71,10 @@ cd build
 or go to this folder in file explorer and double click on runserver.bat
 or .\runserver.bat
 (from /server)
+
+
+
+On mac run with:
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=arm64-osx
+cmake --build build
+./build/uno_server
