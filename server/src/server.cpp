@@ -217,6 +217,8 @@ void on_message(crow::websocket::connection& conn, const std::string& data, bool
             }
             response["turn_index"] = session.current_turn;
             response["player_hands"] = player_hands;
+            
+            response["wild_color"] = session.wild_color;
 
             response["winner"] = session.winner;
         }
